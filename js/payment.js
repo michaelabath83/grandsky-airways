@@ -414,8 +414,8 @@ async function confirmBooking(method) {
   btn.disabled = true;
 
   try {
-    const bookingRef = await addDoc(collection(db, 'bookings'), {
-      userId:    currentUser.uid,
+    const payload = {
+      userId:    currentUser ? currentUser.uid : null,
       passenger: {
         firstName: document.getElementById('payFirst').value.trim(),
         lastName:  document.getElementById('payLast').value.trim(),
@@ -431,12 +431,75 @@ async function confirmBooking(method) {
         cabinClass: flight.cabinClass,
       },
       payment: { method, amount: total, currency: 'USD' },
-      status:    method === 'crypto' ? 'pending_payment' : 'confirmed',
+      status:    method === 'crypto' ? BOOKING_STATUS.PENDING_PAYMENT : 'confirmed',
       bookedAt:  serverTimestamp(),
       bookingRef: generateBookingRef(),
-    });
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
 
-    sessionStorage.setItem('bookingId', bookingRef.id);
+    // attempt to create booking in Firestore
+    let docRef;
+    try {
+      docRef = await addDoc(collection(db, 'bookings'), payload);
+      sessionStorage.setItem('bookingId', docRef.id);
+      sessionStorage.setItem('bookingRef', payload.bookingRef);
+    } catch (e) {
+      console.error('confirmBooking addDoc failed:', e);
+      const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
+      if (isPerm) {
+        // fallback: store booking data locally and send user to awaiting page
+        sessionStorage.setItem('bookingLocalPayload', JSON.stringify(payload));
+        sessionStorage.setItem('bookingRef', payload.bookingRef);
+        try { showFirestoreRemediation(); } catch(err){}
+        window.location.href = 'awaiting.html';
+        return;
+      }
+      throw e;
+    }
+
+    // for crypto, mark as submitted, create payment and notify admin, then show awaiting page
+    if (method === 'crypto') {
+      try {
+        await updateDoc(doc(db, 'bookings', docRef.id), {
+          status: BOOKING_STATUS.PAYMENT_SUBMITTED,
+          'payment.method': 'crypto',
+          'payment.coin': currentCoin,
+          'payment.walletAddress': WALLET_ADDRESSES[currentCoin],
+          'payment.cryptoAmount': (total * RATES[currentCoin]).toFixed(6),
+          'payment.submittedAt': serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        await addDoc(collection(db, 'payments'), {
+          bookingId: docRef.id,
+          bookingRef: payload.bookingRef,
+          coin: currentCoin,
+          walletAddress: WALLET_ADDRESSES[currentCoin],
+          amountUSD: total,
+          cryptoAmount: (total * RATES[currentCoin]).toFixed(6),
+          submittedAt: serverTimestamp(),
+          status: 'submitted'
+        });
+
+        await addDoc(collection(db, 'emailQueue'), {
+          to: 'admin@grandsky.com',
+          subject: `New Payment Submission — ${payload.bookingRef}`,
+          body: `<p>Payment submitted for booking ${payload.bookingRef}. Please review in admin panel.</p>`,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        });
+      } catch (e) {
+        console.error('confirmBooking post-submit failed:', e);
+        const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
+        if (isPerm) { try { showFirestoreRemediation(); } catch(err){} }
+      }
+
+      window.location.href = 'awaiting.html';
+      return;
+    }
+
+    // non-crypto -> confirmation
     window.location.href = 'confirmation.html';
   } catch(e) {
     console.error('confirmBooking error:', e);

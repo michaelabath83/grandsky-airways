@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Awaiting Payment — GrandSky Airways</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/payment.css" />
+</head>
+<body>
+<nav class="nav scrolled"><a href="../index.html" class="nav-logo">GrandSky<span>Airways</span></a></nav>
+
+<main style="max-width:900px;margin:36px auto;padding:24px">
+  <h1>We're awaiting your payment</h1>
+  <p id="awaitMsg">We have recorded your booking request. While we wait for payment confirmation, you can relax — we will notify you when your payment is approved.</p>
+
+  <div class="panel" id="awaitPanel" style="margin-top:18px;padding:18px">
+    <div><strong>Booking reference:</strong> <span id="bkRef">—</span></div>
+    <div style="margin-top:8px" id="bkStatus"><strong>Status:</strong> <span>Pending payment</span></div>
+    <div id="bkDetails" style="margin-top:12px"></div>
+  </div>
+
+  <div id="approvedPanel" style="display:none;margin-top:18px">
+    <h2>Payment approved — Your ticket</h2>
+    <div id="ticketBox" class="panel" style="margin-top:12px"></div>
+    <p>An email with your ticket has been sent to you.</p>
+  </div>
+</main>
+
+<div id="toast"></div>
+<script type="module" src="../js/awaiting.js"></script>
+</body>
+</html>
