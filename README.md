@@ -1,6 +1,6 @@
-# GrandSky
+# GrandSky Airways
 
-Simple static site for the GrandSky demo — flights, airports and basic admin UI.
+Simple static site for the GrandSky Airways demo — flights, airports and basic admin UI.
 
 What this repo contains
 - Static frontend: HTML, CSS, JS in the project root and `pages/`, `js/`, `css/`.

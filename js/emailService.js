@@ -99,7 +99,7 @@ export async function sendRejectionEmail(booking, rejectionReason) {
         <p>Dear ${booking.passenger.firstName},</p>
         <p>We were unable to verify your payment for booking ${booking.bookingRef}.</p>
         <p><strong>Reason:</strong> ${rejectionReason}</p>
-        <p>Please contact us at support@grandsky.com or resubmit your payment.</p>
+        <p>Please contact us at support@grandskyairways.com or resubmit your payment.</p>
         <p>We apologise for any inconvenience.</p>
       </div>
     `;
