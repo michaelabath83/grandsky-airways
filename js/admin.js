@@ -318,16 +318,47 @@ function loadBookings() {
 function setupPendingPayments() {
   const wrap = document.getElementById('pendingPaymentsTableWrap');
   const q = query(collection(db,'bookings'), where('status','==', BOOKING_STATUS.PAYMENT_SUBMITTED), orderBy('payment.submittedAt','asc'));
-  onSnapshot(q, snapshot => {
-    const rows = snapshot.docs.map(d => ({ id:d.id, ...d.data() }));
-    renderPendingPaymentsTable(rows);
-    const count = snapshot.size;
-    const badge = document.getElementById('pending-badge');
-    if (badge) { badge.textContent = count; badge.style.display = count>0 ? 'inline-flex' : 'none'; }
-    snapshot.docChanges().forEach(change => {
-      if (change.type === 'added') highlightNewSubmission(change.doc.data());
+  try {
+    onSnapshot(q, snapshot => {
+      const rows = snapshot.docs.map(d => ({ id:d.id, ...d.data() }));
+      renderPendingPaymentsTable(rows);
+      const count = snapshot.size;
+      const badge = document.getElementById('pending-badge');
+      if (badge) { badge.textContent = count; badge.style.display = count>0 ? 'inline-flex' : 'none'; }
+      snapshot.docChanges().forEach(change => {
+        if (change.type === 'added') highlightNewSubmission(change.doc.data());
+      });
+    }, err => {
+      console.error('onSnapshot error (pending payments):', err);
+      showToast('Failed loading pending payments (real-time). Falling back to static load.','error');
+      // fallback: fetch all bookings client-side and filter/sort to avoid requiring a Firestore composite index
+      fallbackLoadPendingPayments();
     });
-  }, err => { showToast('Failed loading pending payments','error'); });
+  } catch (err) {
+    console.error('setupPendingPayments error:', err);
+    showToast('Failed loading pending payments. Using fallback mode.','error');
+    fallbackLoadPendingPayments();
+  }
+}
+
+// fallback loader: fetch all bookings and filter client-side (avoids needing a composite index)
+async function fallbackLoadPendingPayments() {
+  try {
+    const snap = await getDocs(collection(db,'bookings'));
+    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(r => r.status === BOOKING_STATUS.PAYMENT_SUBMITTED)
+      .sort((a,b) => {
+        const ta = a.payment?.submittedAt?.seconds || 0;
+        const tb = b.payment?.submittedAt?.seconds || 0;
+        return ta - tb;
+      });
+    renderPendingPaymentsTable(rows);
+    const badge = document.getElementById('pending-badge');
+    if (badge) { badge.textContent = rows.length; badge.style.display = rows.length>0 ? 'inline-flex' : 'none'; }
+  } catch (e) {
+    console.error('fallbackLoadPendingPayments failed:', e);
+    showToast('Failed loading pending payments (fallback). Check console.','error');
+  }
 }
 
 function highlightNewSubmission(data) {
