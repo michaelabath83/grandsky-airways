@@ -116,13 +116,9 @@ document.querySelectorAll('.method-card').forEach(card => {
 
 // ── Crypto panel ──
 const WALLET_ADDRESSES = {
-  // Real wallet addresses
-  BTC:  'bc1qnsgpucf288w053e43jl2sl7zahzzu02vt4tqru',
-  ETH:  'REPLACE_WITH_YOUR_ETH_WALLET_ADDRESS',
-  USDT: 'REPLACE_WITH_YOUR_USDT_WALLET_ADDRESS',
-  SOL:  'REPLACE_WITH_YOUR_SOL_WALLET_ADDRESS',
+  BTC: 'bc1qnsgpucf288w053e43jl2sl7zahzzu02vt4tqru'
 };
-const RATES = { BTC: 0.0000145, ETH: 0.000265, USDT: 1.0, SOL: 0.0092 };
+const RATES = { BTC: 0.0000145 };
 
 let currentCoin = 'BTC';
 let qr = null;
