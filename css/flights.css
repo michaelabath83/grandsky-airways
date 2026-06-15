@@ -221,15 +221,16 @@ body { background: var(--surface2); }
 .price-total { font-size: 12px; color: var(--muted); }
 
 .select-btn {
-  background: var(--sky); color: #fff;
+  background: linear-gradient(135deg,#f5a623,#f59e0b);
+  color: #081226;
   padding: 12px 24px; border-radius: 50px;
-  border: none; font-family: var(--font-body);
-  font-size: 14px; font-weight: 700; cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.06); font-family: var(--font-body);
+  font-size: 14px; font-weight: 800; cursor: pointer;
   white-space: nowrap;
-  transition: all var(--transition);
-  width: 100%; text-align: center; z-index: 3; box-shadow: 0 6px 18px rgba(2,102,255,.12);
+  transition: transform .18s ease, box-shadow .18s ease;
+  width: 100%; text-align: center; z-index: 3; box-shadow: 0 8px 24px rgba(245,158,11,0.18);
 }
-.select-btn:hover { background: var(--sky-light); transform: scale(1.02); }
+.select-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(245,158,11,0.22); }
 
 /* No results */
 .no-results {
