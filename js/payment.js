@@ -260,7 +260,16 @@ function ensureCryptoBooking() {
       console.error('ensureCryptoBooking error:', err);
       bookingInitFailed = true;
       const msg = err && err.message ? err.message : 'Failed creating booking. Try again.';
-      showToast(`Booking init failed: ${msg}`, 'error');
+      // Detect permission errors and provide actionable guidance
+      const isPerm = err && (err.code === 'permission-denied' || /permission/i.test(err.message));
+      if (isPerm) {
+        showToast('Booking init failed: Missing or insufficient permissions. Check Firestore rules or sign in with an admin account.', 'error');
+        // disable confirm and pay buttons to avoid further errors
+        try { document.getElementById('confirmCryptoBtn').disabled = true; } catch(e){}
+        try { document.getElementById('payBtn').disabled = true; } catch(e){}
+      } else {
+        showToast(`Booking init failed: ${msg}`, 'error');
+      }
       throw err;
     } finally {
       ensureCryptoInFlight = false;
@@ -418,9 +427,18 @@ async function confirmBooking(method) {
     sessionStorage.setItem('bookingId', bookingRef.id);
     window.location.href = 'confirmation.html';
   } catch(e) {
-    btn.textContent = method === 'crypto' ? "I've sent the payment — Confirm Booking" : 'Pay Now';
-    btn.disabled = false;
-    showToast('Booking failed. Please try again.', 'error');
+    console.error('confirmBooking error:', e);
+    const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
+    if (isPerm) {
+      showToast('Booking failed: Missing or insufficient permissions. Client writes are blocked by Firestore rules. Contact support@grandskyairways.com or enable client writes.', 'error');
+      // keep button disabled to prevent repeated attempts
+      btn.textContent = method === 'crypto' ? "Booking blocked" : 'Booking failed';
+      btn.disabled = true;
+    } else {
+      btn.textContent = method === 'crypto' ? "I've sent the payment — Confirm Booking" : 'Pay Now';
+      btn.disabled = false;
+      showToast('Booking failed. Please try again.', 'error');
+    }
   }
 }
 
