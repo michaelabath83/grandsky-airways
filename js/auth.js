@@ -10,6 +10,7 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   onAuthStateChanged
+  , sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, setDoc, getDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -159,6 +160,17 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
       createdAt: serverTimestamp(),
       marketing: document.getElementById('regMarketing').checked,
     });
+    // Send verification email and sign out so user must verify before continuing
+    try {
+      await sendEmailVerification(cred.user);
+      showToast('Verification email sent. Please verify your email before signing in.', 'success');
+      await auth.signOut();
+      // show register confirmation overlay or redirect to login
+      setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+      return;
+    } catch (ve) {
+      console.error('sendEmailVerification failed', ve);
+    }
     // onAuthStateChanged handles redirect
   } catch(err) {
     setLoading('registerBtn', false);
@@ -201,6 +213,39 @@ document.getElementById('googleBtn').addEventListener('click', async () => {
   } catch(err) {
     if (err.code !== 'auth/popup-closed-by-user') {
       showToast('Google sign-in failed. Please try again.', 'error');
+    }
+  }
+});
+
+// ── GOOGLE (register button) ──
+document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user   = result.user;
+    // Create profile if new user
+    const ref  = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      const [firstName, ...rest] = (user.displayName || 'User').split(' ');
+      await setDoc(ref, {
+        firstName, lastName: rest.join(' ') || '',
+        email: user.email,
+        role: ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user',
+        createdAt: serverTimestamp(),
+        provider: 'google',
+      });
+    }
+    // For Google, the provider email is verified by Google; proceed to destination
+    if (user && ADMIN_EMAILS.includes(user.email)) {
+      window.location.href = _adminHref();
+    } else {
+      const dest = sessionStorage.getItem('postLoginRedirect') || '../index.html';
+      sessionStorage.removeItem('postLoginRedirect');
+      window.location.href = dest;
+    }
+  } catch(err) {
+    if (err.code !== 'auth/popup-closed-by-user') {
+      showToast('Google sign-up failed. Please try again.', 'error');
     }
   }
 });
