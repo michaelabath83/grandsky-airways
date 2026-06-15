@@ -1,0 +1,254 @@
+/* =============================================
+  GrandSky Airways — Flights Results Styles
+  ============================================= */
+
+body { background: var(--surface2); }
+
+/* ── SEARCH SUMMARY BAR ── */
+.search-summary {
+  background: var(--ink);
+  padding: 80px 24px 20px;
+  position: sticky; top: 0; z-index: 90;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.summary-inner {
+  max-width: 1140px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.summary-route {
+  display: flex; align-items: center; gap: 12px;
+  color: #fff; font-size: 18px; font-weight: 700;
+}
+.summary-route svg { width: 18px; height: 18px; color: var(--sky); }
+.summary-details {
+  color: rgba(255,255,255,.5);
+  font-size: 13px; display: flex; align-items: center; gap: 8px;
+}
+.dot { opacity: .4; }
+.summary-edit {
+  color: var(--sky); font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border-radius: 50px;
+  border: 1px solid rgba(0,102,255,.3);
+  transition: all var(--transition);
+}
+.summary-edit:hover { background: var(--sky); color: #fff; }
+
+/* ── LAYOUT ── */
+.flights-layout {
+  max-width: 1140px; margin: 0 auto;
+  padding: 32px 24px;
+  display: grid; grid-template-columns: 260px 1fr;
+  gap: 28px; align-items: start;
+}
+
+/* ── FILTERS SIDEBAR ── */
+.filters-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: sticky; top: 110px;
+}
+.filters-title {
+  font-family: var(--font-display);
+  font-size: 18px; font-weight: 700;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-group { margin-bottom: 24px; }
+.filter-label {
+  display: block; font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+}
+.filter-options { display: flex; flex-direction: column; gap: 8px; }
+.filter-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; cursor: pointer; color: var(--ink);
+}
+.filter-check input[type=checkbox] {
+  width: 16px; height: 16px; accent-color: var(--sky); cursor: pointer;
+}
+
+/* Slider */
+.slider {
+  width: 100%; height: 4px; appearance: none;
+  background: var(--border); border-radius: 4px; outline: none;
+  accent-color: var(--sky); cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--sky);
+  box-shadow: 0 2px 8px rgba(0,102,255,.4); cursor: pointer;
+}
+.slider-values {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--muted); margin-top: 6px;
+}
+
+/* ── RESULTS ── */
+.results-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-end; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 20px;
+}
+.results-title {
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 700;
+}
+.results-sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+.sort-wrap { display: flex; align-items: center; gap: 8px; }
+.sort-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.sort-select {
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface);
+  font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  outline: none; cursor: pointer;
+}
+
+/* ── FLIGHT CARD ── */
+.flight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px; align-items: center;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  cursor: pointer;
+  position: relative; overflow: hidden;
+}
+.flight-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px; background: var(--sky);
+  transform: scaleY(0); transform-origin: center;
+  transition: transform var(--transition);
+}
+.flight-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(0,102,255,.2); }
+.flight-card:hover::before { transform: scaleY(1); }
+.flight-card.best-value { border-color: rgba(245,166,35,.4); }
+.flight-card.best-value::before { background: var(--gold); }
+
+.flight-main { display: flex; flex-direction: column; gap: 16px; }
+
+.airline-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.airline-logo {
+  width: 56px; height: 56px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:700; margin-right:12px; position:relative; overflow:hidden;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--sky);
+  flex-shrink: 0;
+}
+.airline-logo-img { width:100%; height:100%; object-fit:cover; display:block; }
+.airline-code-fallback { font-size:14px; font-weight:700; }
+.airline-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.flight-number { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+/* Best value badge */
+.best-badge {
+  margin-left: auto;
+  padding: 3px 10px; border-radius: 50px;
+  background: rgba(245,166,35,.12); color: var(--gold);
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.itinerary-row {
+  display: flex; align-items: center; gap: 16px;
+}
+.itin-time {
+  text-align: center; min-width: 58px;
+}
+.itin-time strong { display: block; font-size: 22px; font-weight: 700; line-height: 1.1; }
+.itin-time span { font-size: 12px; color: var(--muted); }
+
+.itin-line {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.itin-duration { font-size: 12px; color: var(--muted); font-weight: 500; }
+.itin-bar {
+  width: 100%; height: 2px; background: var(--border);
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.itin-bar::before, .itin-bar::after {
+  content: ''; position: absolute;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border);
+}
+.itin-bar::before { left: 0; }
+.itin-bar::after { right: 0; }
+.stop-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); border: 2px solid var(--surface);
+  z-index: 1; position: relative;
+}
+.itin-stops { font-size: 11px; color: var(--muted); }
+.itin-stops.nonstop { color: var(--success); font-weight: 600; }
+
+.itin-amenities {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.amenity {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--muted); background: var(--surface2);
+  padding: 3px 8px; border-radius: 50px;
+}
+
+/* Price / CTA area */
+.flight-cta {
+  display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: space-between;
+  gap: 16px; min-width: 140px;
+}
+.price-block { text-align: right; }
+.price-amount {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 900; color: var(--ink); line-height: 1;
+}
+.price-per { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.price-total { font-size: 12px; color: var(--muted); }
+
+.select-btn {
+  background: var(--sky); color: #fff;
+  padding: 12px 24px; border-radius: 50px;
+  border: none; font-family: var(--font-body);
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+  width: 100%; text-align: center;
+}
+.select-btn:hover { background: var(--sky-light); transform: scale(1.02); }
+
+/* No results */
+.no-results {
+  text-align: center; padding: 80px 24px;
+  color: var(--muted);
+}
+.no-results-icon { font-size: 64px; margin-bottom: 16px; }
+.no-results h3 {
+  font-family: var(--font-display);
+  font-size: 22px; color: var(--ink); margin-bottom: 8px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .flights-layout { grid-template-columns: 1fr; }
+  .filters-sidebar { position: static; }
+}
+@media (max-width: 600px) {
+  .search-summary { padding-top: 70px; }
+  .flight-card { grid-template-columns: 1fr; }
+  .flight-cta { flex-direction: row; align-items: center; }
+  .price-amount { font-size: 24px; }
+  .itinerary-row { gap: 10px; }
+  .itin-time strong { font-size: 18px; }
+}

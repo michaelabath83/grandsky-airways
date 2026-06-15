@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Results — GrandSky Airways</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/flights.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">GrandSky<span>Airways</span></a>
+  <div class="nav-links">
+    <a href="../index.html" class="nav-link">← New Search</a>
+    <a href="login.html" class="nav-btn" id="nav-auth-btn">Sign In</a>
+  </div>
+  <button class="nav-hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="../index.html">← New Search</a>
+  <a href="login.html" id="mobile-auth-btn">Sign In</a>
+</div>
+
+<!-- Search summary bar -->
+<div class="search-summary">
+  <div class="summary-inner">
+    <div class="summary-route">
+      <span id="summaryFrom"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <span id="summaryTo"></span>
+    </div>
+    <div class="summary-details">
+      <span id="summaryDate"></span>
+      <span class="dot">·</span>
+      <span id="summaryPax"></span>
+      <span class="dot">·</span>
+      <span id="summaryClass"></span>
+    </div>
+    <a href="../index.html" class="summary-edit">Edit Search</a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="flights-layout">
+  <!-- Filters sidebar -->
+  <aside class="filters-sidebar">
+    <h3 class="filters-title">Filter Results</h3>
+
+    <div class="filter-group">
+      <label class="filter-label">Max Price</label>
+      <input type="range" id="priceRange" class="slider" min="50" max="3000" value="3000" />
+      <div class="slider-values">
+        <span>$50</span><span id="priceRangeVal">$3000</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Stops</label>
+      <div class="filter-options">
+        <label class="filter-check"><input type="checkbox" value="0" checked /> Nonstop</label>
+        <label class="filter-check"><input type="checkbox" value="1" checked /> 1 Stop</label>
+        <label class="filter-check"><input type="checkbox" value="2" checked /> 2+ Stops</label>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Departure Time</label>
+      <div class="filter-options">
+        <label class="filter-check"><input type="checkbox" value="morning"   checked /> Morning (6am–12pm)</label>
+        <label class="filter-check"><input type="checkbox" value="afternoon" checked /> Afternoon (12–6pm)</label>
+        <label class="filter-check"><input type="checkbox" value="evening"   checked /> Evening (6pm+)</label>
+      </div>
+    </div>
+
+    <button class="btn btn-outline btn-full" id="clearFilters">Clear Filters</button>
+  </aside>
+
+  <!-- Results list -->
+  <main class="flights-main">
+    <div class="results-header">
+      <div>
+        <h2 class="results-title" id="resultsTitle">Searching flights…</h2>
+        <p class="results-sub" id="resultsSub"></p>
+      </div>
+      <div class="sort-wrap">
+        <label class="sort-label">Sort by</label>
+        <select class="sort-select" id="sortSelect">
+          <option value="price">Cheapest first</option>
+          <option value="duration">Shortest duration</option>
+          <option value="depart">Earliest departure</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="flightsList">
+      <div class="spinner"></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script type="module" src="../js/flights.js"></script>
+</body>
+</html>

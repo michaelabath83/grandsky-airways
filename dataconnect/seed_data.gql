@@ -1,0 +1,48 @@
+mutation CreateSeedData @transaction {
+  user_insertMany(data: [
+    {
+      id: "777e8400-e29b-41d4-a716-446655440001",
+      email: "alice@example.com",
+      fullName: "Alice Smith",
+      createdAt: "2023-10-01T10:00:00Z"
+    },
+    {
+      id: "777e8400-e29b-41d4-a716-446655440002",
+      email: "bob@example.com",
+      fullName: "Bob Jones",
+      createdAt: "2023-10-01T11:00:00Z"
+    }
+  ])
+  airport_insertMany(data: [
+    {
+      id: "888e8400-e29b-41d4-a716-446655440001",
+      code: "JFK",
+      cityName: "New York",
+      countryName: "USA"
+    },
+    {
+      id: "888e8400-e29b-41d4-a716-446655440002",
+      code: "LHR",
+      cityName: "London",
+      countryName: "UK"
+    }
+  ])
+  flight_insertMany(data: [
+    {
+      flightNumber: "AA123",
+      departureTime: "2023-12-01T08:00:00Z",
+      arrivalTime: "2023-12-01T20:00:00Z",
+      price: 500.0,
+      departureAirportId: "888e8400-e29b-41d4-a716-446655440001",
+      arrivalAirportId: "888e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+  booking_insertMany(data: [
+    {
+      status: "CONFIRMED",
+      bookingDate: "2023-11-01T12:00:00Z",
+      userId: "777e8400-e29b-41d4-a716-446655440001",
+      flightId: "00000000-0000-0000-0000-000000000000" # Requires specific flight ID lookup
+    }
+  ])
+}

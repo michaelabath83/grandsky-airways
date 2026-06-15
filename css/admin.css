@@ -1,0 +1,40 @@
+/* Admin specific styles — rely on tokens from global.css */
+.admin-root { display:flex; min-height:100vh; }
+.admin-sidebar { width:260px; background:var(--obsidian-2); color:var(--white); padding:28px 20px; box-shadow: 2px 0 0 rgba(0,0,0,.06); }
+.admin-sidebar .brand { font-family:var(--font-display); font-size:20px; font-weight:700; margin-bottom:18px; }
+.admin-sidebar nav { display:flex; flex-direction:column; gap:6px; }
+.admin-sidebar nav a { color:rgba(255,255,255,.8); padding:10px 12px; border-radius:8px; display:flex; gap:10px; align-items:center; }
+.admin-sidebar nav a.active, .admin-sidebar nav a:hover { background:var(--obsidian-3); color:var(--gold-bright); }
+
+.admin-main { flex:1; display:flex; flex-direction:column; }
+.admin-topbar { display:flex; justify-content:space-between; align-items:center; padding:18px 28px; background:var(--surface); border-bottom:1px solid var(--border); }
+.admin-topbar h1 { font-family:var(--font-display); font-size:18px; margin:0; }
+.top-right { display:flex; gap:12px; align-items:center; }
+#adminEmail { color:var(--muted); font-weight:600; }
+
+.admin-content { padding:28px; overflow:auto; }
+.panel { background:var(--surface); padding:18px; border:1px solid var(--border); border-radius:12px; margin-bottom:20px; }
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.stat-card { background:var(--obsidian-2); color:var(--white); padding:18px; border-radius:8px; }
+.stat-card .val { font-size:22px; font-weight:800; }
+.stat-card .label { font-size:12px; color:var(--slate-light); }
+
+.table-wrap { overflow:auto; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; }
+.table th { background:transparent; color:var(--muted); font-size:13px; }
+.table tr td .actions { display:flex; gap:8px; }
+
+.panel-actions { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+
+/* Modal simple */
+.modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.4); z-index:2000; }
+.modal.open { display:flex; }
+.modal .card { background:var(--surface); padding:20px; border-radius:8px; width:720px; max-width:96%; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-group { margin-bottom:10px; }
+
+@media (max-width:900px) {
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .admin-sidebar { display:none; }
+}

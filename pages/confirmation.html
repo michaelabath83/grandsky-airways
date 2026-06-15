@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Confirmation — GrandSky Airways</title>
+	<link rel="stylesheet" href="../css/global.css" />
+	<link rel="stylesheet" href="../css/payment.css" />
+</head>
+<body>
+	<nav class="nav scrolled"><a href="../index.html" class="nav-logo">GrandSky<span>Airways</span></a></nav>
+	<main class="container" style="padding:28px">
+		<h1 id="confTitle">Booking Confirmation</h1>
+		<p id="confRef" style="font-size:20px;margin-top:8px"></p>
+		<div id="statusBadge" style="margin:12px 0"></div>
+
+		<section id="flightBox"></section>
+		<p id="confMsg">Your payment is under review. You will receive an email once confirmed. This usually takes 1–24 hours.</p>
+		<div style="margin-top:18px">
+			<button id="checkStatus" class="btn">Check Status</button>
+			<button id="downloadTicket" class="btn" style="display:none">Download Ticket</button>
+		</div>
+	</main>
+	<div id="toast"></div>
+	<script type="module">
+		// jsPDF loaded by CDN
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script type="module">
+		import { db } from '../js/firebase-config.js';
+		import { collection, query, where, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+		function getParam(name) { const u = new URL(location.href); return u.searchParams.get(name); }
+		function showBadge(status) {
+			const el = document.getElementById('statusBadge');
+			const map = {
+				pending_payment: ['bg-gold','Pending payment'],
+				payment_submitted: ['bg-slate','Payment submitted'],
+				payment_approved: ['bg-success','Payment approved'],
+				ticket_sent: ['bg-success','Ticket sent ✓'],
+				payment_rejected: ['bg-danger','Payment rejected'],
+				cancelled: ['bg-slate','Cancelled']
+			};
+			const v = map[status] || ['bg-slate', status];
+			el.innerHTML = `<span class="badge ${v[0]}">${v[1]}</span>`;
+		}
+
+		async function load() {
+			const ref = getParam('ref');
+			if (!ref) return;
+			document.getElementById('confRef').textContent = `Your Booking Reference: ${ref}`;
+			// query bookings by bookingRef
+			const q = query(collection(db,'bookings'), where('bookingRef','==',ref));
+			const snaps = await getDocs(q);
+			if (snaps.empty) return;
+			const b = snaps.docs[0].data();
+			showBadge(b.status);
+			const fb = document.getElementById('flightBox');
+			fb.innerHTML = `
+				<div class="flight-summary-card">
+					<div>${b.flight.fromCity} → ${b.flight.toCity}</div>
+					<div>${b.flight.departDate} · ${b.flight.dep} → ${b.flight.arr}</div>
+				</div>
+			`;
+			// show download if ticket_sent
+			if (b.status === 'ticket_sent') {
+				document.getElementById('downloadTicket').style.display = 'inline-block';
+			}
+		}
+
+		document.getElementById('checkStatus').addEventListener('click', () => load());
+		document.getElementById('downloadTicket').addEventListener('click', async () => {
+			const ref = getParam('ref');
+			const q = query(collection(db,'bookings'), where('bookingRef','==',ref));
+			const snaps = await getDocs(q);
+			if (snaps.empty) return;
+			const bookingId = snaps.docs[0].id;
+			// find ticket
+			const t = query(collection(db,'tickets'), where('bookingId','==',bookingId));
+			const tdocs = await getDocs(t);
+			if (tdocs.empty) return alert('Ticket not found');
+			const ticket = tdocs.docs[0].data();
+			// regenerate PDF using basic template via jsPDF if available
+			if (window.jspdf && window.jspdf.jsPDF) {
+				const { jsPDF } = window.jspdf;
+				const docp = new jsPDF();
+				docp.setFontSize(16); docp.text('GrandSky Airways', 20, 20);
+				docp.text(`Ticket: ${ticket.ticketNumber}`,20,36);
+				docp.text(`Booking Ref: ${ticket.bookingRef}`,20,44);
+				docp.save(`ticket-${ticket.bookingRef}.pdf`);
+			} else {
+				alert('PDF generator not loaded');
+			}
+		});
+
+		load();
+	</script>
+</body>
+</html>

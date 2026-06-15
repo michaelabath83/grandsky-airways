@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard — GrandSky Airways</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+</head>
+<body>
+  <div class="admin-root">
+    <aside class="admin-sidebar">
+      <div class="brand">GrandSky <em>Airways</em></div>
+      <nav>
+        <a href="#overview" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="#prices"><i class="bi bi-currency-dollar"></i> Flight Prices</a>
+        <a href="#airports"><i class="bi bi-map"></i> Airports & Routes</a>
+        <a href="#airlines"><i class="bi bi-building"></i> Airlines</a>
+        <a href="#bookings"><i class="bi bi-journal-bookmark"></i> Bookings</a>
+        <a href="#pending-payments" id="pendingPaymentsLink"><i class="bi bi-clock-history"></i> Pending Payments <span id="pending-badge" style="display:none;margin-left:8px" class="badge bg-gold">0</span></a>
+        <a href="#users"><i class="bi bi-people"></i> Users</a>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <div class="top-left"><h1>Admin Dashboard</h1></div>
+        <div class="top-right">
+          <span id="adminEmail"></span>
+          <button id="adminSignOut" class="btn-obsidian"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+          <button id="seedDefaults" class="btn-ghost" title="Seed default airports/airlines/flights from local data">Seed Defaults</button>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <section id="overview" class="panel">
+          <h2>Overview</h2>
+          <div class="stats-grid">
+            <div class="stat-card" id="statBookings"><div class="val">—</div><div class="label">Total Bookings</div></div>
+            <div class="stat-card" id="statUsers"><div class="val">—</div><div class="label">Total Users</div></div>
+            <div class="stat-card" id="statRoutes"><div class="val">—</div><div class="label">Active Routes</div></div>
+            <div class="stat-card" id="statRevenue"><div class="val">—</div><div class="label">Revenue (USD)</div></div>
+          </div>
+        </section>
+
+        <section id="prices" class="panel">
+          <h2>Flight Prices</h2>
+          <div class="panel-actions">
+            <button id="addRouteBtn" class="nav-cta"><i class="bi bi-plus-lg"></i> Add New Route</button>
+            <button id="refreshFlights" class="btn-ghost">Refresh</button>
+            <label class="btn-ghost">Import JSON<input id="importFlightsInput" type="file" accept="application/json" style="display:none"/></label>
+          </div>
+          <div class="table-wrap" id="flightsTableWrap"></div>
+        </section>
+
+        <section id="airports" class="panel">
+          <h2>Airports & Routes</h2>
+          <div class="panel-actions">
+            <button id="refreshAirports" class="btn-ghost">Refresh</button>
+            <label class="btn-ghost">Import JSON<input id="importAirportsInput" type="file" accept="application/json" style="display:none"/></label>
+          </div>
+          <div class="table-wrap" id="airportsTableWrap"></div>
+        </section>
+
+        <section id="airlines" class="panel">
+          <h2>Airlines</h2>
+          <div class="panel-actions">
+            <button id="refreshAirlines" class="btn-ghost">Refresh</button>
+            <label class="btn-ghost">Import JSON<input id="importAirlinesInput" type="file" accept="application/json" style="display:none"/></label>
+          </div>
+          <div class="table-wrap" id="airlinesTableWrap"></div>
+        </section>
+
+        <section id="bookings" class="panel">
+          <h2>Bookings</h2>
+          <div class="panel-actions"><input id="bookingSearch" placeholder="Search bookings..." /><button id="refreshBookings" class="btn-ghost">Refresh</button>
+            <label class="btn-ghost">Import JSON<input id="importBookingsInput" type="file" accept="application/json" style="display:none"/></label>
+          </div>
+          <div class="table-wrap" id="bookingsTableWrap"></div>
+        </section>
+
+        <section id="pending-payments" class="panel">
+          <h2>Pending Payments</h2>
+          <div class="panel-actions">
+            <button id="refreshPending" class="btn-ghost">Refresh</button>
+          </div>
+          <div class="table-wrap" id="pendingPaymentsTableWrap"></div>
+        </section>
+
+        <section id="users" class="panel">
+          <h2>Users</h2>
+          <div class="panel-actions">
+            <button id="refreshUsers" class="btn-ghost">Refresh</button>
+            <label class="btn-ghost">Import JSON<input id="importUsersInput" type="file" accept="application/json" style="display:none"/></label>
+          </div>
+          <div class="table-wrap" id="usersTableWrap"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <!-- EmailJS (REPLACE public key in firebase-config.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <!-- jsPDF for ticket generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

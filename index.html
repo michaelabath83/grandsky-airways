@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GrandSky Airways — Fly with Distinction</title>
+  <meta name="description" content="Premium flights to over 1,200 destinations worldwide. Book with GrandSky Airways."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="css/global.css"/>
+  <link rel="stylesheet" href="css/home.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════ NAV ═══════════════════════════ -->
+<nav class="nav transparent" id="mainNav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-mark">
+      <i class="bi bi-airplane-fill" style="font-size:16px;color:var(--obsidian)"></i>
+    </div>
+    <span class="nav-logo-text">GrandSky <em>Airways</em></span>
+  </a>
+
+  <div class="nav-links">
+    <a href="#" class="nav-link">Destinations</a>
+    <a href="#" class="nav-link">Experience</a>
+    <a href="#" class="nav-link">Deals</a>
+    <div class="nav-divider"></div>
+    <a href="pages/login.html" class="nav-link" id="nav-auth-btn">Sign In</a>
+    <a href="pages/login.html?tab=register" class="nav-cta" id="nav-join-btn">Join Now</a>
+  </div>
+
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#">Destinations</a>
+  <a href="#">Experience</a>
+  <a href="#">Deals</a>
+  <a href="pages/login.html" id="mobile-auth-btn">Sign In</a>
+  <a href="pages/login.html?tab=register" style="color:var(--gold-bright)">Join GrandSky</a>
+</div>
+
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<header class="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-line"></span>
+      Premium Air Travel · Est. 2009
+    </div>
+    <h1 class="hero-title"> The world <strong>awaits <em>you.</em></strong>
+    </h1>
+    <p class="hero-sub">1,200+ routes. Unmatched service.<br/>Every journey, a memory worth keeping.</p>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════ SEARCH ═══════════════════════════ -->
+<div class="search-section">
+  <div class="search-card">
+
+    <!-- Dark header -->
+    <div class="search-card-header">
+      <div class="trip-tabs">
+        <button class="trip-tab active" data-type="roundtrip">
+          <i class="bi bi-arrow-left-right"></i> Round Trip
+        </button>
+        <button class="trip-tab" data-type="oneway">
+          <i class="bi bi-arrow-right"></i> One Way
+        </button>
+        <button class="trip-tab" data-type="multicity">
+          <i class="bi bi-plus-circle"></i> Multi-City
+        </button>
+      </div>
+      <div class="class-select-wrap">
+        <i class="bi bi-stars" style="color:var(--gold);font-size:14px"></i>
+        <select class="class-select" id="cabinClass">
+          <option value="economy">Economy</option>
+          <option value="premium">Premium Economy</option>
+          <option value="business">Business</option>
+          <option value="first">First Class</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Fields row: FROM · ⇄ · TO · DEPART · RETURN -->
+    <div class="search-fields">
+
+      <!-- FROM -->
+      <div class="field-group">
+        <div class="field-label">From</div>
+        <div class="field-box" style="position:relative">
+          <i class="bi bi-airplane-fill field-icon"></i>
+          <input type="text" class="field-input" id="fromInput"
+                 placeholder="City or airport" autocomplete="off" spellcheck="false"/>
+          <div class="autocomplete-dropdown" id="fromList"></div>
+        </div>
+      </div>
+
+      <!-- SWAP -->
+      <div class="swap-cell">
+        <button class="swap-btn" id="swapBtn" title="Swap airports">
+          <i class="bi bi-arrow-left-right"></i>
+        </button>
+      </div>
+
+      <!-- TO -->
+      <div class="field-group">
+        <div class="field-label">To</div>
+        <div class="field-box" style="position:relative">
+          <i class="bi bi-geo-alt-fill field-icon"></i>
+          <input type="text" class="field-input" id="toInput"
+                 placeholder="City or airport" autocomplete="off" spellcheck="false"/>
+          <div class="autocomplete-dropdown" id="toList"></div>
+        </div>
+      </div>
+
+      <!-- DEPART -->
+      <div class="field-group">
+        <div class="field-label">Depart</div>
+        <div class="field-box field-date">
+          <input type="date" class="field-input" id="departDate"/>
+        </div>
+      </div>
+
+      <!-- RETURN -->
+      <div class="field-group" id="returnGroup">
+        <div class="field-label">Return</div>
+        <div class="field-box field-date">
+          <input type="date" class="field-input" id="returnDate"/>
+        </div>
+      </div>
+
+    </div><!-- /search-fields -->
+
+    <!-- Action row: perks · passengers · search btn -->
+    <div class="search-action">
+
+      <div class="search-perks">
+        <div class="search-perk"><i class="bi bi-shield-check"></i> Price match guarantee</div>
+        <div class="search-perk"><i class="bi bi-arrow-repeat"></i> Free rebooking 24h prior</div>
+        <div class="search-perk"><i class="bi bi-award"></i> No hidden fees</div>
+      </div>
+
+      <!-- Passengers -->
+      <div class="pax-group">
+        <div class="pax-label-txt">Passengers</div>
+        <div class="pax-field">
+          <i class="bi bi-people-fill" style="font-size:14px;color:var(--slate)"></i>
+          <button class="pax-btn" id="paxMinus" aria-label="Remove passenger">−</button>
+          <span class="pax-num" id="paxCount">1</span>
+          <button class="pax-btn" id="paxPlus" aria-label="Add passenger">+</button>
+          <span class="pax-txt" id="paxLabel">Passenger</span>
+        </div>
+      </div>
+
+      <button class="search-btn" id="searchBtn">
+        <i class="bi bi-search"></i>
+        <span id="searchBtnText">Search Flights</span>
+      </button>
+
+    </div><!-- /search-action -->
+
+  </div><!-- /search-card -->
+</div><!-- /search-section -->
+
+
+<!-- Gold Runway Divider -->
+<div style="padding:0 48px;margin-top:72px">
+  <div class="runway-divider"></div>
+</div>
+
+
+<!-- ═══════════════════════════ DESTINATIONS ═══════════════════════════ -->
+<section class="destinations-section">
+  <div class="container">
+    <div class="destinations-header reveal">
+      <div>
+        <div class="section-eyebrow">Popular Countries</div>
+        <h2 class="section-title">Where will<br/>you go next?</h2>
+        <p class="section-sub">Handpicked countries loved by GrandSky travellers.</p>
+      </div>
+      <a href="#" class="btn btn-outline-gold">All destinations <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="dest-grid" id="destGrid">
+      <div class="spinner" style="grid-column:1/-1"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Ticker -->
+<div class="ticker-section">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+
+<!-- ═══════════════════════════ WHY GRANDSKY ═══════════════════════════ -->
+<section class="why-section">
+  <div class="container">
+    <div class="reveal" style="max-width:560px">
+      <div class="section-eyebrow">The GrandSky Difference</div>
+      <h2 class="section-title light">Why discerning travellers<br/>choose us.</h2>
+      <p class="section-sub" style="color:var(--slate)">
+        We believe every flight should feel like the destination has already begun.
+      </p>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="why-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <h3>Instant Booking</h3>
+        <p>Confirm your seat in under 3 minutes. No queues, no hold music, no friction.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:.1s">
+        <div class="why-icon"><i class="bi bi-shield-fill-check"></i></div>
+        <h3>Price Guarantee</h3>
+        <p>Find the same flight cheaper elsewhere and we'll match it — plus 10% off your next booking.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:.2s">
+        <div class="why-icon"><i class="bi bi-arrow-repeat"></i></div>
+        <h3>Free Rebooking</h3>
+        <p>Plans change. Rebook any flight up to 24 hours before departure at no extra cost.</p>
+      </div>
+      <div class="why-card reveal" style="transition-delay:.3s">
+        <div class="why-icon"><i class="bi bi-globe2"></i></div>
+        <h3>1,200+ Routes</h3>
+        <p>From major international hubs to hidden gems — we fly where the world takes you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="runway-divider on-dark"></div>
+    <div class="footer-main">
+      <div class="footer-brand">
+        <div class="footer-logo-wrap">
+          <div class="footer-logo-mark">
+            <i class="bi bi-airplane-fill" style="font-size:14px;color:var(--obsidian)"></i>
+          </div>
+          GrandSky <em style="font-style:italic;color:var(--gold-bright);margin-left:4px">Airways</em>
+        </div>
+        <p>Premium air travel for those who believe the journey is as meaningful as the destination.</p>
+        <div class="footer-social">
+          <a href="#" title="X / Twitter"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          <a href="#" title="Facebook"><i class="bi bi-facebook"></i></a>
+          <a href="#" title="Instagram"><i class="bi bi-instagram"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4>Fly</h4>
+        <a href="#">Book a Flight</a>
+        <a href="#">Destinations</a>
+        <a href="#">Special Deals</a>
+        <a href="#">Group Travel</a>
+        <a href="#">Charter Flights</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Experience</h4>
+        <a href="#">Business Class</a>
+        <a href="#">First Class</a>
+        <a href="#">Airport Lounges</a>
+        <a href="#">In-flight Dining</a>
+        <a href="#">Loyalty Programme</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Support</h4>
+        <a href="#">Help Centre</a>
+        <a href="mailto:support@grandsky.com">
+          <i class="bi bi-envelope" style="font-size:11px"></i> support@grandsky.com
+        </a>
+        <a href="#">Manage Booking</a>
+        <a href="#">Baggage Policy</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2025 GrandSky Airways Ltd. All rights reserved.</span>
+      <div style="display:flex;gap:18px">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<div id="toast"></div>
+<script type="module" src="js/home.js"></script>
+</body>
+</html>

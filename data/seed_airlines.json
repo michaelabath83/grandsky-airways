@@ -1,0 +1,6 @@
+[
+  { "code": "GS", "name": "GrandSky Airways", "color": "#C6922A" },
+  { "code": "SW", "name": "GrandSky Airways Express", "color": "#C6922A" },
+  { "code": "UA", "name": "UniAir", "color": "#E8B84B" },
+  { "code": "QN", "name": "Quantum Air", "color": "#6B7280" }
+]

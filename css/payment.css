@@ -1,0 +1,275 @@
+/* =============================================
+  GrandSky Airways — Payment Page Styles
+  ============================================= */
+
+body { background: var(--surface2); padding-top: 64px; }
+
+.nav { background: var(--ink) !important; }
+
+/* ── LAYOUT ── */
+.payment-layout {
+  max-width: 1080px; margin: 0 auto;
+  padding: 40px 24px 60px;
+  display: grid; grid-template-columns: 1fr 360px;
+  gap: 32px; align-items: start;
+}
+
+/* ── FORM COL ── */
+.pay-title {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700; margin-bottom: 4px;
+}
+.pay-sub {
+  color: var(--muted); font-size: 14px; margin-bottom: 28px;
+}
+.countdown {
+  color: var(--danger); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* Steps */
+.steps {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 36px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+}
+.step {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; font-size: 13px; color: var(--muted); font-weight: 500;
+  position: relative;
+}
+.step:not(:last-child)::after {
+  content: ''; position: absolute; right: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 1px; height: 24px; background: var(--border);
+}
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+  background: var(--surface2); border: 2px solid var(--border); color: var(--muted);
+}
+.step.active .step-dot { background: var(--sky); border-color: var(--sky); color: #fff; }
+.step.active { color: var(--ink); }
+.step.done .step-dot { background: var(--success); border-color: var(--success); color: #fff; font-size: 13px; }
+.step.done { color: var(--success); }
+
+/* Sections */
+.pay-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+}
+.pay-section-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 20px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── PAYMENT METHODS ── */
+.payment-methods { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+
+.method-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: var(--radius-sm);
+  border: 2px solid var(--border); cursor: pointer;
+  transition: all var(--transition); position: relative;
+}
+.method-card:hover { border-color: rgba(0,102,255,.3); background: rgba(0,102,255,.02); }
+.method-card.selected {
+  border-color: var(--sky);
+  background: rgba(0,102,255,.04);
+  box-shadow: 0 0 0 4px rgba(0,102,255,.1);
+}
+.method-crypto.selected {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,.04);
+  box-shadow: 0 0 0 4px rgba(245,158,11,.12);
+}
+
+.method-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--surface2); display: flex;
+  align-items: center; justify-content: center;
+  color: var(--ink); flex-shrink: 0;
+}
+.method-icon.card-icons { gap: 2px; }
+
+.method-info { flex: 1; }
+.method-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.method-desc { font-size: 12px; color: var(--muted); }
+
+.method-check {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border);
+  transition: all var(--transition);
+}
+.method-card.selected .method-check {
+  border-color: var(--sky); background: var(--sky);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 12px; background-position: center; background-repeat: no-repeat;
+}
+.method-crypto.selected .method-check { border-color: #f59e0b; background: #f59e0b; }
+
+/* Pay button */
+.pay-submit-btn { height: 52px; font-size: 16px; }
+
+/* ── CRYPTO PANEL ── */
+.crypto-panel {
+  display: none; margin-top: 12px;
+  background: var(--surface2); border-radius: var(--radius-sm);
+  border: 1px dashed rgba(245,158,11,.4);
+  padding: 20px; animation: fadeUp .3s ease both;
+}
+.crypto-panel.open { display: block; }
+
+.crypto-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.crypto-header h4 { font-size: 16px; font-weight: 700; }
+.crypto-tabs { display: flex; gap: 4px; }
+.crypto-tab {
+  padding: 5px 12px; border-radius: 50px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  cursor: pointer; color: var(--muted); transition: all var(--transition);
+}
+.crypto-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.crypto-details { display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
+
+.qr-box { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.qr-placeholder {
+  width: 120px; height: 120px;
+  border-radius: 8px; overflow: hidden;
+  border: 3px solid var(--ink); padding: 6px;
+  background: #fff;
+}
+.qr-grid {
+  width: 100%; height: 100%;
+  background-image:
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+}
+.qr-label { font-size: 11px; color: var(--muted); }
+
+.crypto-amount-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.crypto-label { font-size: 12px; color: var(--muted); }
+.crypto-amount { font-size: 18px; font-weight: 800; color: var(--ink); }
+
+.wallet-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+.wallet-address-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;
+}
+.wallet-address-box code { font-size: 11px; word-break: break-all; flex: 1; color: var(--ink); }
+.copy-btn {
+  padding: 4px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface2);
+  font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  transition: all var(--transition);
+}
+.copy-btn:hover { background: var(--sky); color: #fff; border-color: var(--sky); }
+
+.crypto-note {
+  font-size: 11px; color: var(--danger);
+  line-height: 1.5; margin-bottom: 8px;
+}
+.crypto-timer { font-size: 12px; color: var(--muted); }
+.crypto-timer strong { color: var(--danger); font-variant-numeric: tabular-nums; }
+
+/* ── ORDER SUMMARY ── */
+.order-summary {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  position: sticky; top: 80px;
+}
+.summary-title {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.flight-summary-card {
+  background: linear-gradient(135deg, #0a0a0f, #0d1a3a);
+  border-radius: var(--radius-sm); padding: 16px; color: #fff;
+  margin-bottom: 20px;
+}
+.fs-airline { font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 8px; }
+.fs-route {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 22px; font-weight: 800; margin-bottom: 6px;
+}
+.fs-route svg { width: 18px; height: 18px; color: var(--sky); }
+.fs-times { font-size: 13px; color: rgba(255,255,255,.55); margin-bottom: 4px; }
+.fs-class {
+  display: inline-block; padding: 3px 10px; border-radius: 50px;
+  background: rgba(0,102,255,.25); color: rgba(255,255,255,.8);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+}
+
+.price-breakdown { margin-bottom: 20px; }
+.pb-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); color: var(--muted);
+}
+.pb-row:last-child { border-bottom: none; }
+.pb-row.total {
+  font-size: 18px; font-weight: 800; color: var(--ink);
+  border-top: 2px solid var(--border);
+  padding-top: 12px; margin-top: 4px;
+}
+
+.secure-notice {
+  background: rgba(34,197,94,.08); color: var(--success);
+  font-size: 12px; font-weight: 600;
+  padding: 10px 14px; border-radius: 8px;
+  border: 1px solid rgba(34,197,94,.2);
+  text-align: center;
+}
+
+/* ── ERROR OVERLAY ── */
+.error-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: rgba(10,10,15,.85);
+  backdrop-filter: blur(12px);
+  align-items: center; justify-content: center;
+}
+.error-overlay.open { display: flex; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.error-modal {
+  background: var(--surface); border-radius: 24px;
+  padding: 48px 40px; text-align: center;
+  max-width: 460px; width: 90%;
+  box-shadow: 0 32px 80px rgba(0,0,0,.3);
+  animation: slideUp .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+.error-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+.error-modal h2 {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 900; margin-bottom: 12px;
+}
+.error-modal p { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+.error-sub { color: var(--sky) !important; font-weight: 600; margin-bottom: 28px !important; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .payment-layout { grid-template-columns: 1fr; }
+  .order-summary { position: static; }
+}
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .steps span { display: none; }
+  .crypto-details { grid-template-columns: 1fr; }
+  .qr-box { align-items: flex-start; flex-direction: row; gap: 12px; }
+}

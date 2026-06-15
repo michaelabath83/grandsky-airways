@@ -1,0 +1,42 @@
+mutation CreateUser($email: String!, $fullName: String!) @auth(level: PUBLIC) {
+  user_insert(data: {
+    email: $email,
+    fullName: $fullName,
+    createdAt_expr: "request.time"
+  })
+}
+
+mutation CreateBooking($flightId: UUID!, $seatNumber: String!) @auth(level: USER) {
+  booking_insert(data: {
+    flightId: $flightId,
+    userId_expr: "auth.uid",
+    status: "CONFIRMED",
+    bookingDate_expr: "request.time",
+    seatNumber: $seatNumber
+  })
+}
+
+query ListMyBookings @auth(level: USER) {
+  bookings(where: {userId: {eq_expr: "auth.uid"}}) {
+    status
+    bookingDate
+    flight {
+      flightNumber
+      departureTime
+      departureAirport { cityName }
+      arrivalAirport { cityName }
+    }
+  }
+}
+
+query SearchFlights($departure: String!, $arrival: String!) @auth(level: PUBLIC) {
+  flights(where: {
+    departureAirport: {cityName: {eq: $departure}},
+    arrivalAirport: {cityName: {eq: $arrival}}
+  }) {
+    flightNumber
+    price
+    departureTime
+    arrivalTime
+  }
+}
