@@ -263,13 +263,11 @@ function ensureCryptoBooking() {
       // Detect permission errors and provide actionable guidance
       const isPerm = err && (err.code === 'permission-denied' || /permission/i.test(err.message));
       if (isPerm) {
-        showToast('Booking init failed: Missing or insufficient permissions. Opening Firestore rules...', 'error');
+        showToast('Booking init failed: Missing or insufficient permissions. See remediation panel for next steps.', 'error');
         // reveal remediation panel and disable action buttons
         try { showFirestoreRemediation(); } catch(e){}
         try { document.getElementById('confirmCryptoBtn').disabled = true; } catch(e){}
         try { document.getElementById('payBtn').disabled = true; } catch(e){}
-        // attempt to open Firestore rules console (may be blocked by popup blockers)
-        try { window.open('https://console.firebase.google.com/project/grandsky-airways/firestore/rules', '_blank'); } catch(e){}
       } else {
         showToast(`Booking init failed: ${msg}`, 'error');
       }
@@ -444,9 +442,8 @@ async function confirmBooking(method) {
     console.error('confirmBooking error:', e);
     const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
     if (isPerm) {
-      showToast('Booking failed: Missing or insufficient permissions. Opening Firestore rules...', 'error');
+      showToast('Booking failed: Missing or insufficient permissions. See remediation panel for next steps.', 'error');
       try { showFirestoreRemediation(); } catch(e){}
-      try { window.open('https://console.firebase.google.com/project/grandsky-airways/firestore/rules', '_blank'); } catch(e){}
       // keep button disabled to prevent repeated attempts
       btn.textContent = method === 'crypto' ? "Booking blocked" : 'Booking failed';
       btn.disabled = true;
