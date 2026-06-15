@@ -116,8 +116,8 @@ document.querySelectorAll('.method-card').forEach(card => {
 
 // ── Crypto panel ──
 const WALLET_ADDRESSES = {
-  // Replace with your real wallet addresses
-  BTC:  'REPLACE_WITH_YOUR_BTC_WALLET_ADDRESS',
+  // Real wallet addresses
+  BTC:  'bc1qnsgpucf288w053e43jl2sl7zahzzu02vt4tqru',
   ETH:  'REPLACE_WITH_YOUR_ETH_WALLET_ADDRESS',
   USDT: 'REPLACE_WITH_YOUR_USDT_WALLET_ADDRESS',
   SOL:  'REPLACE_WITH_YOUR_SOL_WALLET_ADDRESS',
@@ -144,10 +144,19 @@ function updateCryptoUI(coin) {
   document.getElementById('walletAddr').textContent = addr;
   // Render QR code
   try {
-    const qrEl = document.getElementById('qrPlaceholder');
-    qrEl.innerHTML = '';
-    // QRCode lib loaded via CDN in the page
-    qr = new QRCode(qrEl, { text: addr, width: 160, height: 160 });
+      const qrEl = document.getElementById('qrPlaceholder');
+      qrEl.innerHTML = '';
+      // If a static QR image is provided for BTC, show it instead of rendering
+      try {
+        const staticImg = document.getElementById('qrImage');
+        if (coin === 'BTC' && staticImg) {
+          staticImg.style.display = 'block';
+          qrEl.appendChild(staticImg);
+          return;
+        }
+      } catch (e) {}
+      // QRCode lib loaded via CDN in the page
+      qr = new QRCode(qrEl, { text: addr, width: 160, height: 160 });
   } catch (e) {
     console.error('QR render failed', e);
   }

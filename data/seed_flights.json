@@ -1,6 +1,7 @@
 [
   { "fromCity":"London", "fromCode":"LHR", "toCity":"Paris", "toCode":"CDG", "price":320, "airline":"GrandSky Airways", "featured":true },
   { "fromCity":"London", "fromCode":"LHR", "toCity":"Dubai", "toCode":"DXB", "price":480, "airline":"GrandSky Airways", "featured":true },
+  { "fromCity":"Lagos", "fromCode":"LOS", "toCity":"Dubai", "toCode":"DXB", "price":350, "airline":"GrandSky Airways", "featured":false },
   { "fromCity":"London", "fromCode":"LHR", "toCity":"Tokyo", "toCode":"HND", "price":790, "airline":"GrandSky Airways", "featured":true },
   { "fromCity":"London", "fromCode":"LHR", "toCity":"Barcelona", "toCode":"BCN", "price":210, "airline":"GrandSky Airways", "featured":true },
   { "fromCity":"London", "fromCode":"LHR", "toCity":"Cape Town", "toCode":"CPT", "price":540, "airline":"GrandSky Airways", "featured":true },
