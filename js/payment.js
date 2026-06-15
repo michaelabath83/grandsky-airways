@@ -286,6 +286,17 @@ function showBookingRef(ref) {
   el.style.display = 'block';
 }
 
+function showFirestoreRemediation() {
+  try {
+    const el = document.getElementById('firestoreRemediation');
+    if (!el) return;
+    el.style.display = 'block';
+    // ensure buttons are visible/disabled as needed
+    try { document.getElementById('confirmCryptoBtn').disabled = true; } catch(e){}
+    try { document.getElementById('payBtn').disabled = true; } catch(e){}
+  } catch (e) { console.error('showFirestoreRemediation failed', e); }
+}
+
 function generateBookingRef() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let s = '';
