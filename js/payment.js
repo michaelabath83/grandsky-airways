@@ -6,7 +6,7 @@ import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
+// Using Vercel serverless endpoints instead of Firebase callables
 
 let currentUser = null;
 let selectedMethod = null;
@@ -218,9 +218,7 @@ function ensureCryptoBooking() {
         }
       }
 
-      // generate booking via callable function (server-side)
-      const funcs = getFunctions();
-      const createBooking = httpsCallable(funcs, 'createBooking');
+      // generate booking via server endpoint (Vercel)
       const payload = {
         passenger: {
           firstName: document.getElementById('payFirst').value.trim(),
@@ -238,16 +236,29 @@ function ensureCryptoBooking() {
         },
         status: BOOKING_STATUS.PENDING_PAYMENT
       };
-
-      const res = await createBooking(payload);
-      const result = res && res.data ? res.data : {};
-      if (result && result.bookingId) {
-        sessionStorage.setItem('bookingId', result.bookingId);
-        sessionStorage.setItem('bookingRef', result.bookingRef);
-        showBookingRef(result.bookingRef);
-        return { id: result.bookingId, bookingRef: result.bookingRef };
+      // call server endpoint
+      try {
+        const idToken = currentUser ? await currentUser.getIdToken() : null;
+        const res = await fetch('/api/createBooking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': idToken ? `Bearer ${idToken}` : ''
+          },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (res.ok && result.bookingId) {
+          sessionStorage.setItem('bookingId', result.bookingId);
+          sessionStorage.setItem('bookingRef', result.bookingRef);
+          showBookingRef(result.bookingRef);
+          return { id: result.bookingId, bookingRef: result.bookingRef };
+        }
+        const msg = result && result.error ? result.error : 'createBooking failed';
+        throw new Error(msg);
+      } catch (e) {
+        throw e;
       }
-      throw new Error('createBooking returned no bookingId');
     } catch (err) {
       console.error('ensureCryptoBooking error:', err);
       bookingInitFailed = true;
@@ -320,20 +331,31 @@ document.getElementById('confirmCryptoBtn').addEventListener('click', async () =
     const btn = document.getElementById('confirmCryptoBtn');
     btn.disabled = true; btn.textContent = 'Submitting…';
 
-    // submit payment via server-side callable
+    // submit payment via server-side endpoint
     try {
-      const funcs = getFunctions();
-      const submitPayment = httpsCallable(funcs, 'submitPayment');
-      await submitPayment({
-        bookingId,
-        coin: currentCoin,
-        walletAddress: WALLET_ADDRESSES[currentCoin],
-        cryptoAmount: (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
-        amountUSD: total
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+      const res = await fetch('/api/submitPayment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': idToken ? `Bearer ${idToken}` : ''
+        },
+        body: JSON.stringify({
+          bookingId,
+          coin: currentCoin,
+          walletAddress: WALLET_ADDRESSES[currentCoin],
+          cryptoAmount: (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
+          amountUSD: total
+        })
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(()=>({}));
+        throw new Error(errBody.error || 'submitPayment failed');
+      }
     } catch (e) {
-      console.error('submitPayment callable failed', e);
-      const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
+      console.error('submitPayment endpoint failed', e);
+      const errMsg = e && e.message ? e.message : '';
+      const isPerm = /permission|auth/i.test(errMsg);
       if (isPerm) {
         showToast('Failed to submit payment: insufficient permissions.', 'error');
         try { showFirestoreRemediation(); } catch(err){}
@@ -436,15 +458,19 @@ async function confirmBooking(method) {
     // for crypto, mark as submitted, create payment and notify admin, then show awaiting page
     if (method === 'crypto') {
       try {
-        const funcs = getFunctions();
-        const submitPayment = httpsCallable(funcs, 'submitPayment');
-        await submitPayment({
-          bookingId: docRef.id,
-          coin: currentCoin,
-          walletAddress: WALLET_ADDRESSES[currentCoin],
-          cryptoAmount: (total * RATES[currentCoin]).toFixed(6),
-          amountUSD: total
+        const idToken = currentUser ? await currentUser.getIdToken() : null;
+        const res = await fetch('/api/submitPayment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': idToken ? `Bearer ${idToken}` : ''
+          },
+          body: JSON.stringify({ bookingId: docRef.id, coin: currentCoin, walletAddress: WALLET_ADDRESSES[currentCoin], cryptoAmount: (total * RATES[currentCoin]).toFixed(6), amountUSD: total })
         });
+        if (!res.ok) {
+          const errBody = await res.json().catch(()=>({}));
+          throw new Error(errBody.error || 'submitPayment failed');
+        }
       } catch (e) {
         console.error('confirmBooking submitPayment failed:', e);
         const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
