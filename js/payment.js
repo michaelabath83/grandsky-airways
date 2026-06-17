@@ -6,6 +6,7 @@ import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
 let currentUser = null;
 let selectedMethod = null;
@@ -217,11 +218,10 @@ function ensureCryptoBooking() {
         }
       }
 
-      // generate bookingRef and create booking
-      const bookingRef = generateBookingRef();
-      const booking = {
-        bookingRef,
-        userId: currentUser ? currentUser.uid : null,
+      // generate booking via callable function (server-side)
+      const funcs = getFunctions();
+      const createBooking = httpsCallable(funcs, 'createBooking');
+      const payload = {
         passenger: {
           firstName: document.getElementById('payFirst').value.trim(),
           lastName:  document.getElementById('payLast').value.trim(),
@@ -229,33 +229,25 @@ function ensureCryptoBooking() {
           phone:     document.getElementById('payPhone').value.trim(),
         },
         flight: {
-          fromCode: flight.from || '', fromCity: flight.fromCity || '',
-          toCode: flight.to || '', toCity: flight.toCity || '',
-          dep: flight.dep || '', arr: flight.arr || '', duration: flight.dur || '',
-          airline: flight.airline || '', departDate: flight.departDate || '', pax: flight.pax || 1,
-          cabinClass: flight.cabinClass || '', stops: flight.stops || 0
+          from: flight.from, to: flight.to, departDate: flight.departDate,
+          dep: flight.dep, arr: flight.arr, airline: flight.airline, pax: flight.pax, cabinClass: flight.cabinClass
         },
         payment: {
-          method: 'crypto',
-          coin: currentCoin,
-          walletAddress: WALLET_ADDRESSES[currentCoin],
-          amountDue: total,
-          cryptoAmount: (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
-          submittedAt: null,
-          reviewedAt: null,
-          reviewedBy: null,
-          txNote: null
+          method: 'crypto', coin: currentCoin, walletAddress: WALLET_ADDRESSES[currentCoin],
+          amount: total, cryptoAmount: (total * RATES[currentCoin]).toFixed(6)
         },
-        status: BOOKING_STATUS.PENDING_PAYMENT,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        status: BOOKING_STATUS.PENDING_PAYMENT
       };
 
-      const ref = await addDoc(collection(db, 'bookings'), booking);
-      sessionStorage.setItem('bookingId', ref.id);
-      sessionStorage.setItem('bookingRef', bookingRef);
-      showBookingRef(bookingRef);
-      return { id: ref.id, bookingRef };
+      const res = await createBooking(payload);
+      const result = res && res.data ? res.data : {};
+      if (result && result.bookingId) {
+        sessionStorage.setItem('bookingId', result.bookingId);
+        sessionStorage.setItem('bookingRef', result.bookingRef);
+        showBookingRef(result.bookingRef);
+        return { id: result.bookingId, bookingRef: result.bookingRef };
+      }
+      throw new Error('createBooking returned no bookingId');
     } catch (err) {
       console.error('ensureCryptoBooking error:', err);
       bookingInitFailed = true;
@@ -328,44 +320,27 @@ document.getElementById('confirmCryptoBtn').addEventListener('click', async () =
     const btn = document.getElementById('confirmCryptoBtn');
     btn.disabled = true; btn.textContent = 'Submitting…';
 
-    // update booking status
-    await updateDoc(doc(db, 'bookings', bookingId), {
-      'status': BOOKING_STATUS.PAYMENT_SUBMITTED,
-      'payment.submittedAt': serverTimestamp(),
-      'payment.coin': currentCoin,
-      'payment.walletAddress': WALLET_ADDRESSES[currentCoin],
-      'payment.cryptoAmount': (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
-      'updatedAt': serverTimestamp()
-    });
-
-    // create payments doc
-    await addDoc(collection(db, 'payments'), {
-      bookingId,
-      bookingRef,
-      coin: currentCoin,
-      walletAddress: WALLET_ADDRESSES[currentCoin],
-      amountUSD: total,
-      cryptoAmount: (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
-      submittedAt: serverTimestamp(),
-      userNote: null,
-      status: 'submitted',
-      reviewedAt: null,
-      reviewedBy: null,
-      rejectionReason: null
-    });
-
-    // enqueue admin email
-    await addDoc(collection(db, 'emailQueue'), {
-      to: 'admin@grandsky.com',
-      subject: `New Payment Submission — ${bookingRef}`,
-      body: `<p>Payment submitted for booking ${bookingRef}.</p>`,
-      attachmentNote: null,
-      status: 'pending',
-      retryCount: 0,
-      createdAt: serverTimestamp(),
-      sentAt: null,
-      error: null
-    });
+    // submit payment via server-side callable
+    try {
+      const funcs = getFunctions();
+      const submitPayment = httpsCallable(funcs, 'submitPayment');
+      await submitPayment({
+        bookingId,
+        coin: currentCoin,
+        walletAddress: WALLET_ADDRESSES[currentCoin],
+        cryptoAmount: (total * RATES[currentCoin]).toFixed(currentCoin === 'USDT' ? 2 : 6),
+        amountUSD: total
+      });
+    } catch (e) {
+      console.error('submitPayment callable failed', e);
+      const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
+      if (isPerm) {
+        showToast('Failed to submit payment: insufficient permissions.', 'error');
+        try { showFirestoreRemediation(); } catch(err){}
+      } else {
+        showToast('Failed to submit payment. Try again.', 'error');
+      }
+    }
 
     // redirect to confirmation
     window.location.href = `confirmation.html?ref=${bookingRef}&status=submitted`;
@@ -461,36 +436,17 @@ async function confirmBooking(method) {
     // for crypto, mark as submitted, create payment and notify admin, then show awaiting page
     if (method === 'crypto') {
       try {
-        await updateDoc(doc(db, 'bookings', docRef.id), {
-          status: BOOKING_STATUS.PAYMENT_SUBMITTED,
-          'payment.method': 'crypto',
-          'payment.coin': currentCoin,
-          'payment.walletAddress': WALLET_ADDRESSES[currentCoin],
-          'payment.cryptoAmount': (total * RATES[currentCoin]).toFixed(6),
-          'payment.submittedAt': serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-
-        await addDoc(collection(db, 'payments'), {
+        const funcs = getFunctions();
+        const submitPayment = httpsCallable(funcs, 'submitPayment');
+        await submitPayment({
           bookingId: docRef.id,
-          bookingRef: payload.bookingRef,
           coin: currentCoin,
           walletAddress: WALLET_ADDRESSES[currentCoin],
-          amountUSD: total,
           cryptoAmount: (total * RATES[currentCoin]).toFixed(6),
-          submittedAt: serverTimestamp(),
-          status: 'submitted'
-        });
-
-        await addDoc(collection(db, 'emailQueue'), {
-          to: 'admin@grandsky.com',
-          subject: `New Payment Submission — ${payload.bookingRef}`,
-          body: `<p>Payment submitted for booking ${payload.bookingRef}. Please review in admin panel.</p>`,
-          status: 'pending',
-          createdAt: serverTimestamp()
+          amountUSD: total
         });
       } catch (e) {
-        console.error('confirmBooking post-submit failed:', e);
+        console.error('confirmBooking submitPayment failed:', e);
         const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message));
         if (isPerm) { try { showFirestoreRemediation(); } catch(err){} }
       }
