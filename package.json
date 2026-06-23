@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
+    "@supabase/supabase-js": "^2.108.2",
     "firebase": "^12.14.0",
     "firebase-admin": "^10.3.0",
     "firebase-cli": "^1.2.0",

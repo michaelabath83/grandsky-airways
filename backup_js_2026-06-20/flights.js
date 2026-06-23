@@ -2,7 +2,12 @@
 // GrandSky Airways — Flights Results Logic
 // =============================================
 
-import { supabase, ADMIN_EMAILS } from './supabase-config.js';
+// Firebase usage commented out in backup file — auth migrated to Supabase.
+// TODO: migrate this backup script to Supabase or serverless endpoints.
+// import { auth, db } from './firebase-config.js';
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// import { collection, getDocs, query, where }
+//   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // Error instrumentation: capture window errors for diagnostics
 if (!window.__lastErrors) window.__lastErrors = [];
@@ -27,13 +32,9 @@ document.getElementById('summaryDate').textContent = departDate ? new Date(depar
 document.getElementById('summaryPax').textContent  = `${pax} passenger${pax>1?'s':''}`;
 document.getElementById('summaryClass').textContent = cabinClass.charAt(0).toUpperCase() + cabinClass.slice(1);
 
-// Nav auth (Supabase)
-(async () => {
-  const { data } = await supabase.auth.getUser();
-  setupAccountUI(!!data.user);
-})();
-supabase.auth.onAuthStateChange((event, session) => {
-  setupAccountUI(!!session?.user);
+// Nav auth
+onAuthStateChanged(auth, user => {
+  setupAccountUI(!!user);
 });
 
 function setupAccountUI(loggedIn) {
@@ -58,7 +59,7 @@ function setupAccountUI(loggedIn) {
       const anchor = dropdown.querySelector('#nav-auth-btn');
       anchor.addEventListener('click', (e) => { e.preventDefault(); dropdown.classList.toggle('show'); });
       dropdown.querySelector('#signOutBtn').addEventListener('click', async (e) => {
-        e.preventDefault(); try { await supabase.auth.signOut(); } catch(_){}; window.location.href = '../index.html';
+        e.preventDefault(); try { await signOut(auth); } catch(_){}; window.location.href = '../index.html';
       });
     }
 
@@ -71,7 +72,7 @@ function setupAccountUI(loggedIn) {
         mobileSign.id = 'mobile-signout';
         mobileSign.href = '#';
         mobileSign.textContent = 'Sign out';
-        mobileSign.addEventListener('click', async (e) => { e.preventDefault(); try { await supabase.auth.signOut(); } catch(_){}; window.location.href = '../index.html'; });
+        mobileSign.addEventListener('click', async (e) => { e.preventDefault(); try { await signOut(auth); } catch(_){}; window.location.href = '../index.html'; });
         mobileBtn.after(mobileSign);
       }
     }
@@ -155,26 +156,24 @@ function generateFlights(from, to, count = 12) {
 let allFlights = [];
 let filtered   = [];
 
-// Load flights from Supabase or fallback
+// Load flights from Firestore or fallback
 async function loadFlights() {
   try {
-    const { data, error } = await supabase
-      .from('flights')
-      .select('*')
-      .eq('from_code', searchFrom)
-      .eq('to_code', searchTo);
-    
-    if (!error && data && data.length > 0) {
-      allFlights = data.map(d => ({
-        id: d.id, ...d,
-        pricePer: d.price,
-        priceTotal: d.price * pax,
+    const snap = await getDocs(query(
+      collection(db, 'flights'),
+      where('fromCode', '==', searchFrom),
+      where('toCode',   '==', searchTo)
+    ));
+    if (!snap.empty) {
+      allFlights = snap.docs.map(d => ({
+        id: d.id, ...d.data(),
+        pricePer: d.data().price,
+        priceTotal: d.data().price * pax,
       }));
     } else {
       allFlights = generateFlights(searchFrom, searchTo);
     }
   } catch(e) {
-    console.error('Error loading flights from Supabase:', e);
     allFlights = generateFlights(searchFrom, searchTo);
   }
 
@@ -200,29 +199,16 @@ function renderFlights() {
     return;
   }
 
-  // normalize fields for template (handle Firestore variants where `airline` may be a string)
-  const items = filtered.map(f => {
-    const airlineName = typeof f.airline === 'string' ? f.airline : (f.airline?.name || 'GrandSky Airways');
-    const airlineCode = f.airline?.code || (typeof f.airline === 'string' ? f.airline.slice(0,2).toUpperCase() : 'GS');
-    const airlineColor = f.airline?.color || '#C6922A';
-    const depTime = f.depTime || f.dep || f.departTime || '';
-    const arrTime = f.arrTime || f.arr || '';
-    const duration = f.duration || f.dur || (f.durationMin ? `${Math.floor(f.durationMin/60)}h ${f.durationMin%60}m` : '');
-    const pricePer = f.pricePer || f.price || f.pricePer;
-    const priceTotal = f.priceTotal || (pricePer ? pricePer * (pax || 1) : f.priceTotal);
-    return { ...f, airlineName, airlineCode, airlineColor, depTime, arrTime, duration, pricePer, priceTotal };
-  });
-
-  list.innerHTML = items.map(f => `
+  list.innerHTML = filtered.map(f => `
     <div class="flight-card${f.bestValue?' best-value':''}" data-id="${f.id}" data-price="${f.price}">
       <div class="flight-main">
         <div class="airline-row">
-          <div class="airline-logo" style="border-color:${f.airlineColor}20;color:${f.airlineColor}">
-            <img class="airline-logo-img" src="/css/assets/logos/${f.airlineCode||'UNKNOWN'}.svg" alt="${f.airlineCode||''} logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'" />
-            <span class="airline-code-fallback" style="display:inline-block">${(f.airlineCode||'?')}</span>
+          <div class="airline-logo" style="border-color:${f.airline?.color||'#ccc'}20;color:${f.airline?.color||'var(--gold)'}">
+            <img class="airline-logo-img" src="/css/assets/logos/${f.airline?.code||'UNKNOWN'}.svg" alt="${f.airline?.code||''} logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'" />
+            <span class="airline-code-fallback" style="display:inline-block">${(f.airline?.code||'?')}</span>
           </div>
           <div>
-            <div class="airline-name">${f.airlineName}</div>
+            <div class="airline-name">${f.airline?.name||'GrandSky Airways'}</div>
             <div class="flight-number">${f.flightNum||''}</div>
           </div>
           ${f.bestValue ? '<div class="best-badge">⭐ Best Value</div>' : ''}
@@ -230,7 +216,7 @@ function renderFlights() {
 
         <div class="itinerary-row">
           <div class="itin-time">
-            <strong>${f.depTime || f.depTime}</strong>
+            <strong>${f.depTime}</strong>
             <span>${f.from}</span>
           </div>
           <div class="itin-line">
@@ -260,7 +246,7 @@ function renderFlights() {
           <div class="price-per">per person</div>
           ${pax > 1 ? `<div class="price-total">$${f.priceTotal} total</div>` : ''}
         </div>
-        <button class="select-btn" onclick="selectFlight('${f.id}', ${f.pricePer}, '${f.airlineName.replace(/'/g, "\\'")}', '${f.depTime}', '${f.arrTime}', '${f.duration}', ${f.stops})">
+        <button class="select-btn" onclick="selectFlight('${f.id}', ${f.pricePer}, '${f.airline?.name||'GrandSky Airways'}', '${f.depTime}', '${f.arrTime}', '${f.duration}', ${f.stops})">
           Select →
         </button>
       </div>
@@ -283,7 +269,7 @@ async function verifyAirlineLogos() {
       } catch (e) {
         // network error - hide the image and keep fallback visible
         img.style.display = 'none';
-        try { img.nextElementSibling.style.display = 'inline-block'; } catch(_){}
+        try { img.nextElementSibling.style.display = 'inline-block'; } catch(_){ }
       }
     });
   } catch (e) { console.error('verifyAirlineLogos failed', e); }

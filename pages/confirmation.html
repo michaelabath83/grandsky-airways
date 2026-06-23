@@ -27,8 +27,7 @@
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 	<script type="module">
-		import { db } from '../js/firebase-config.js';
-		import { collection, query, where, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+		import { supabase } from '../js/supabase-config.js';
 
 		function getParam(name) { const u = new URL(location.href); return u.searchParams.get(name); }
 		function showBadge(status) {
@@ -49,26 +48,92 @@
 			const ref = getParam('ref');
 			if (!ref) return;
 			document.getElementById('confRef').textContent = `Your Booking Reference: ${ref}`;
-			// query bookings by bookingRef
-			const q = query(collection(db,'bookings'), where('bookingRef','==',ref));
-			const snaps = await getDocs(q);
-			if (snaps.empty) return;
-			const b = snaps.docs[0].data();
+			
+			// Query bookings by booking_ref using Supabase
+			const { data, error } = await supabase
+				.from('bookings')
+				.select('*')
+				.eq('booking_ref', ref)
+				.single();
+			
+			if (error || !data) return;
+			const b = data;
 			showBadge(b.status);
 			const fb = document.getElementById('flightBox');
-			fb.innerHTML = `
-				<div class="flight-summary-card">
-					<div>${b.flight.fromCity} → ${b.flight.toCity}</div>
-					<div>${b.flight.departDate} · ${b.flight.dep} → ${b.flight.arr}</div>
-				</div>
-			`;
-			// show download if ticket_sent
+			
+			// Parse flight_json or use flight object
+			let f = {};
+			if (typeof b.flight_json === 'string') {
+				try { f = JSON.parse(b.flight_json); } catch(e) {}
+			} else if (b.flight_json) {
+				f = b.flight_json;
+			}
+			
+			// Defensively resolve flight fields (data may come from different sources)
+			const fromLabel = f.fromCity || f.from || f.from_city || f.from_code || b.from_city || '';
+			const toLabel = f.toCity || f.to || f.to_city || f.to_code || b.to_city || '';
+			const departDate = f.departDate || f.depart_date || f.date || b.depart_date || '';
+			const depTime = f.dep || f.depart || f.depTime || f.depart_time || '';
+			const arrTime = f.arr || f.arrival || f.arrTime || f.arrival_time || '';
+
+			if (fromLabel || toLabel || departDate) {
+				fb.innerHTML = `
+					<div class="flight-summary-card">
+						<div class="fs-route">${fromLabel || '—'} &nbsp;→&nbsp; ${toLabel || '—'}</div>
+						<div class="fs-times">${departDate ? departDate + ' · ' : ''}${depTime ? depTime + ' → ' : ''}${arrTime ? arrTime : ''}</div>
+					</div>
+				`;
+			} else {
+				fb.innerHTML = `<div class="flight-summary-card"><div class="fs-route">Flight details unavailable</div></div>`;
+			}
+			
+			// Show download if ticket_sent
 			if (b.status === 'ticket_sent') {
 				document.getElementById('downloadTicket').style.display = 'inline-block';
 			}
 		}
 
-		document.getElementById('checkStatus').addEventListener('click', () => load());
+		document.getElementById('checkStatus').addEventListener('click', async () => {
+			const ref = getParam('ref');
+			if (!ref) return;
+			
+			const { data, error } = await supabase
+				.from('bookings')
+				.select('*')
+				.eq('booking_ref', ref)
+				.single();
+			
+			if (error || !data) return;
+			const b = data;
+			
+			if (b.status === 'payment_submitted') {
+				document.getElementById('confMsg').textContent = 'Pending confirmation...';
+				document.getElementById('flightBox').scrollIntoView({ behavior: 'smooth' });
+				const btn = document.getElementById('checkStatus');
+				btn.textContent = 'View Flight Details';
+				btn.onclick = () => {
+					let f = {};
+					if (typeof b.flight_json === 'string') {
+						try { f = JSON.parse(b.flight_json); } catch(e) {}
+					} else if (b.flight_json) {
+						f = b.flight_json;
+					}
+					const from = encodeURIComponent(f.from || f.from_city || b.from_city || '');
+					const to = encodeURIComponent(f.to || f.to_city || b.to_city || '');
+					window.location.href = `flights.html?from=${from}&to=${to}`;
+				};
+				return;
+			}
+			
+			if (b.status === 'payment_approved' || b.status === 'ticket_sent') {
+				showBadge(b.status);
+				document.getElementById('confMsg').textContent = 'Payment confirmed — your ticket is available.';
+				document.getElementById('downloadTicket').style.display = 'inline-block';
+				return;
+			}
+			
+			load();
+		});
 		document.getElementById('downloadTicket').addEventListener('click', async () => {
 			const ref = getParam('ref');
 			const q = query(collection(db,'bookings'), where('bookingRef','==',ref));

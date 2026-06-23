@@ -1,18 +1,5 @@
-/**
- * ⚠️ DEPRECATED - DO NOT USE IN PRODUCTION
- * 
- * This file is kept for historical reference only.
- * Firebase has been completely migrated to Supabase.
- * 
- * All authentication is now handled by Supabase Auth (see supabase-config.js).
- * All database queries are now handled by Supabase PostgreSQL.
- * 
- * Imports from this file should be removed from all active code.
- * See MIGRATION_COMPLETE.md for migration details.
- */
-
 // =============================================
-// GrandSky Airways — Firebase Configuration (DEPRECATED)
+// GrandSky Airways — Firebase Configuration
 // =============================================
 // 1. Go to https://console.firebase.google.com
 // 2. Create a project named "grandsky-airways"
@@ -21,6 +8,7 @@
 // 5. Register a Web App and replace the config below
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -34,8 +22,7 @@ const firebaseConfig = {
   measurementId: "G-R81YNW0BB9"
 };
 const app = initializeApp(firebaseConfig);
-// Note: auth has been migrated to Supabase. Keep Firestore `db` export for now
-// while migrating data reads/writes to Supabase.
+export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Admin emails — add your email here to get admin access

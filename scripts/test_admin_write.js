@@ -18,7 +18,8 @@ async function main() {
   admin.initializeApp({ credential: admin.credential.cert(key) });
 
   const projectId = key.project_id;
-  const apiKey = 'AIzaSyA8LBQLRAqtpep1nLuejyHr_qdG0nfAVcU'; // from firebase-config.js
+  // Firebase API key used by REST sign-in (legacy). Auth is now handled by Supabase.
+  // const apiKey = 'AIzaSyA8LBQLRAqtpep1nLuejyHr_qdG0nfAVcU'; // from firebase-config.js
   const adminEmail = 'admin@grandskyairways.com';
   const adminPassword = 'Admin123!';
 

@@ -1,12 +1,25 @@
 // =============================================
-// GrandSky Airways — Authentication Logic (Supabase)
+// GrandSky Airways — Authentication Logic
 // =============================================
 
-import { supabase, ADMIN_EMAILS } from './supabase-config.js';
+// Firebase usage commented out in backup file — auth migrated to Supabase.
+// TODO: migrate this backup script to Supabase or serverless endpoints.
+// import { auth, db, ADMIN_EMAILS } from './firebase-config.js';
+// import {
+//   signInWithEmailAndPassword,
+//   createUserWithEmailAndPassword,
+//   GoogleAuthProvider,
+//   signInWithPopup,
+//   sendPasswordResetEmail,
+//   onAuthStateChanged
+//   , sendEmailVerification
+// } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// import { doc, setDoc, getDoc, serverTimestamp }
+//   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const redirect = new URLSearchParams(location.search).get('redirect') || null;
 
-// Redirect helper
+// Redirect if already logged in
 function _adminHref() {
   // If the current page is inside the /pages/ folder, return a same-folder link.
   // Otherwise return the path from project root.
@@ -17,10 +30,9 @@ function _adminHref() {
   } catch(e) { return 'pages/admin.html'; }
 }
 
-// Supabase auth state handler
-supabase.auth.onAuthStateChange((event, session) => {
-  const user = session?.user || null;
+onAuthStateChanged(auth, user => {
   if (user) {
+    // Prefer admin landing for admin users
     if (user.email && ADMIN_EMAILS.includes(user.email)) {
       window.location.href = _adminHref();
       return;
@@ -78,7 +90,7 @@ document.getElementById('forgotLink').addEventListener('click', async (e) => {
   const email = document.getElementById('loginEmail').value.trim();
   if (!email) { showToast('Enter your email above first.', 'error'); return; }
   try {
-    await supabase.auth.resetPasswordForEmail(email);
+    await sendPasswordResetEmail(auth, email);
     showToast('Password reset email sent! Check your inbox.', 'success');
   } catch(err) {
     showToast('Could not send reset email. Check the address.', 'error');
@@ -94,9 +106,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 
   setLoading('loginBtn', true);
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    if (error) throw error;
-    const user = data?.user || null;
+    await signInWithEmailAndPassword(auth, email, pass);
+    const user = auth.currentUser;
     if (user && ADMIN_EMAILS.includes(user.email)) {
       window.location.href = _adminHref();
     } else {
@@ -106,7 +117,13 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     }
   } catch(err) {
     setLoading('loginBtn', false);
-    showToast(err.message || 'Sign in failed. Please try again.', 'error');
+    const msgs = {
+      'auth/user-not-found':  'No account found with that email.',
+      'auth/wrong-password':  'Incorrect password. Try again.',
+      'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
+      'auth/invalid-email':   'Please enter a valid email address.',
+    };
+    showToast(msgs[err.code] || 'Sign in failed. Please try again.', 'error');
   }
 });
 
@@ -136,52 +153,102 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
   setLoading('registerBtn', true);
   try {
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error) throw error;
-    const user = data?.user;
-    // Create profile row in Supabase (ensure `profiles` table exists)
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    // Save profile to Firestore
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      firstName, lastName, email,
+      dob, nationality, passport, passportExpiry, phone,
+      role: ADMIN_EMAILS.includes(email) ? 'admin' : 'user',
+      createdAt: serverTimestamp(),
+      marketing: document.getElementById('regMarketing').checked,
+    });
+    // Send verification email and sign out so user must verify before continuing
     try {
-      await supabase.from('profiles').insert([{ 
-        id: user.id,
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        dob,
-        nationality,
-        passport,
-        passport_expiry: passportExpiry,
-        phone,
-        role: ADMIN_EMAILS.includes(email) ? 'admin' : 'user',
-        marketing: document.getElementById('regMarketing').checked,
-        created_at: new Date().toISOString()
-      }]);
-    } catch(profileErr) {
-      console.warn('Failed to create profile row:', profileErr);
+      await sendEmailVerification(cred.user);
+      showToast('Verification email sent. Please verify your email before signing in.', 'success');
+      await auth.signOut();
+      // show register confirmation overlay or redirect to login
+      setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+      return;
+    } catch (ve) {
+      console.error('sendEmailVerification failed', ve);
     }
-    showToast('Registration successful. Check your email for verification.', 'success');
-    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
-    return;
+    // onAuthStateChanged handles redirect
   } catch(err) {
     setLoading('registerBtn', false);
-    showToast(err.message || 'Registration failed. Please try again.', 'error');
+    const msgs = {
+      'auth/email-already-in-use': 'An account with this email already exists.',
+      'auth/invalid-email':        'Please enter a valid email address.',
+      'auth/weak-password':        'Password is too weak. Use at least 8 characters.',
+    };
+    showToast(msgs[err.code] || 'Registration failed. Please try again.', 'error');
   }
 });
 
-// ── GOOGLE ── (OAuth redirect handled by Supabase)
+// ── GOOGLE ──
+const provider = new GoogleAuthProvider();
 document.getElementById('googleBtn').addEventListener('click', async () => {
   try {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/pages/login.html' } });
+    const result = await signInWithPopup(auth, provider);
+    const user   = result.user;
+    // Create profile if new user
+    const ref  = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      const [firstName, ...rest] = (user.displayName || 'User').split(' ');
+      await setDoc(ref, {
+        firstName, lastName: rest.join(' ') || '',
+        email: user.email,
+        role: ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user',
+        createdAt: serverTimestamp(),
+        provider: 'google',
+      });
+    }
+    // Redirect after Google sign-in
+    if (user && ADMIN_EMAILS.includes(user.email)) {
+      window.location.href = _adminHref();
+    } else {
+      const dest = sessionStorage.getItem('postLoginRedirect') || '../index.html';
+      sessionStorage.removeItem('postLoginRedirect');
+      window.location.href = dest;
+    }
   } catch(err) {
-    showToast('Google sign-in failed. Please try again.', 'error');
+    if (err.code !== 'auth/popup-closed-by-user') {
+      showToast('Google sign-in failed. Please try again.', 'error');
+    }
   }
 });
 
 // ── GOOGLE (register button) ──
 document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
   try {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/pages/login.html' } });
+    const result = await signInWithPopup(auth, provider);
+    const user   = result.user;
+    // Create profile if new user
+    const ref  = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      const [firstName, ...rest] = (user.displayName || 'User').split(' ');
+      await setDoc(ref, {
+        firstName, lastName: rest.join(' ') || '',
+        email: user.email,
+        role: ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user',
+        createdAt: serverTimestamp(),
+        provider: 'google',
+      });
+    }
+    // For Google, the provider email is verified by Google; proceed to destination
+    if (user && ADMIN_EMAILS.includes(user.email)) {
+      window.location.href = _adminHref();
+    } else {
+      const dest = sessionStorage.getItem('postLoginRedirect') || '../index.html';
+      sessionStorage.removeItem('postLoginRedirect');
+      window.location.href = dest;
+    }
   } catch(err) {
-    showToast('Google sign-up failed. Please try again.', 'error');
+    if (err.code !== 'auth/popup-closed-by-user') {
+      showToast('Google sign-up failed. Please try again.', 'error');
+    }
   }
 });
 

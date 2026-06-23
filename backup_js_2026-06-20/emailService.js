@@ -1,15 +1,19 @@
-// Email service using Supabase email_queue table
-import { supabase } from './supabase-config.js';
+import { db } from './firebase-config.js';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 async function createEmailQueueEntry(payload) {
-  const { data, error } = await supabase.from('email_queue').insert([{
-    to_email: payload.to,
+  const qRef = await addDoc(collection(db, 'emailQueue'), {
+    to: payload.to,
     subject: payload.subject,
     body: payload.body,
-    created_at: new Date().toISOString()
-  }]).select('id').single();
-  if (error) throw error;
-  return data;
+    attachmentNote: payload.attachmentNote || null,
+    status: 'pending',
+    retryCount: 0,
+    createdAt: serverTimestamp(),
+    sentAt: null,
+    error: null
+  });
+  return qRef;
 }
 
 async function sendViaEmailJS(templateParams) {
@@ -19,19 +23,20 @@ async function sendViaEmailJS(templateParams) {
   return emailjs.send(templateParams.serviceId || 'YOUR_SERVICE_ID', templateParams.templateId || 'YOUR_TEMPLATE_ID', templateParams);
 }
 
-async function sendAndTrack(emailId, templateParams, retryLimit = 3) {
+async function sendAndTrack(emailEntryRef, templateParams, retryLimit = 3) {
   try {
     await sendViaEmailJS(templateParams);
-    await supabase.from('email_queue').update({ sent_at: new Date().toISOString() }).eq('id', emailId);
+    await updateDoc(emailEntryRef, { status: 'sent', sentAt: serverTimestamp(), error: null });
     return true;
   } catch (err) {
     const e = err && err.message ? err.message : String(err);
+    try { await updateDoc(emailEntryRef, { status: 'failed', retryCount: (templateParams._retry||0) + 1, error: e }); } catch(eu) {}
     if ((templateParams._retry || 0) < retryLimit) {
       templateParams._retry = (templateParams._retry || 0) + 1;
       return new Promise((resolve, reject) => {
         setTimeout(async () => {
           try {
-            const r = await sendAndTrack(emailId, templateParams, retryLimit);
+            const r = await sendAndTrack(emailEntryRef, templateParams, retryLimit);
             resolve(r);
           } catch (err2) { reject(err2); }
         }, 5000);

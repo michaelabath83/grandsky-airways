@@ -1,21 +1,3 @@
-/**
- * ⚠️ DEPRECATED FILE - DO NOT USE IN PRODUCTION
- * 
- * This file contains client-side Firebase logic and is no longer used.
- * Payment approval/rejection has been moved to Vercel serverless functions:
- * - /api/admin/approvePayment.js
- * - /api/admin/rejectPayment.js
- * 
- * These serverless endpoints handle privileged writes using the service_role key,
- * and are called by admin-supabase.js (the frontend admin panel).
- * 
- * This file is kept for historical reference only.
- */
-
-// Firestore usage retained for payments workflow. Consider replacing with Supabase `payments`, `tickets`, `admin_logs`.
-// TODO: implement serverless endpoints with service_role key for privileged writes.
-// NOTE: approvePayment/rejectPayment have been moved to serverless endpoints under /api/admin/
-// This file remains for reference but server-side implementations handle privileged writes now.
 import { db } from './firebase-config.js';
 import { doc, getDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { sendTicketEmail, sendRejectionEmail } from './emailService.js';

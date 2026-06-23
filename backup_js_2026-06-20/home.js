@@ -1,16 +1,17 @@
 // =============================================
 // GRANDSKY AIRWAYS — Homepage Logic
 // =============================================
-import { supabase, ADMIN_EMAILS } from './supabase-config.js';
+// Firebase usage commented out in backup file — auth migrated to Supabase.
+// TODO: migrate this backup script to Supabase or serverless endpoints.
+// import { auth, db } from './firebase-config.js';
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// import { collection, getDocs, query, where, limit }
+//   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── Auth state (Supabase)
-// Check initial session and subscribe to changes
-(async () => {
-  const { data } = await supabase.auth.getUser();
-  setupAccountUI(!!data.user);
-})();
-supabase.auth.onAuthStateChange((event, session) => {
-  setupAccountUI(!!session?.user);
+// ── Auth state ──
+// Auth state
+onAuthStateChanged(auth, user => {
+  setupAccountUI(!!user);
 });
 
 function setupAccountUI(loggedIn) {
@@ -37,7 +38,7 @@ function setupAccountUI(loggedIn) {
       anchor.addEventListener('click', (e) => { e.preventDefault(); dropdown.classList.toggle('show'); });
       dropdown.querySelector('#signOutBtn').addEventListener('click', async (e) => {
         e.preventDefault();
-        try { await supabase.auth.signOut(); } catch(_){ }
+        try { await signOut(auth); } catch(_){ }
         window.location.href = 'index.html';
       });
     }
@@ -51,7 +52,7 @@ function setupAccountUI(loggedIn) {
         mobileSign.id = 'mobile-signout';
         mobileSign.href = '#';
         mobileSign.textContent = 'Sign out';
-        mobileSign.addEventListener('click', async (e) => { e.preventDefault(); try { await supabase.auth.signOut(); } catch(_){}; window.location.href = 'index.html'; });
+        mobileSign.addEventListener('click', async (e) => { e.preventDefault(); try { await signOut(auth); } catch(_){}; window.location.href = 'index.html'; });
         mobileBtn.after(mobileSign);
       }
     }
@@ -157,15 +158,17 @@ const AIRPORTS = [
 
 let airports = [...AIRPORTS];
 
-// Load airports from Supabase if available
-(async () => {
-  try {
-    const { data, error } = await supabase.from('airports').select('*');
-    if (!error && data && data.length > 0) {
-      airports = data;
+// Subscribe to Firestore airports collection if available (real-time)
+try {
+  const airportsCol = collection(db, 'airports');
+  onSnapshot(airportsCol, snap => {
+    if (!snap.empty) {
+      airports = snap.docs.map(d => d.data());
+    } else {
+      airports = [...AIRPORTS];
     }
-  } catch(e) { /* fallback to embedded list */ }
-})();
+  });
+} catch(e) { /* fallback to embedded list */ }
 
 // ══════════════════════════════════════
 // AUTOCOMPLETE — full keyboard navigation
@@ -390,26 +393,25 @@ async function loadDestinations() {
   let items = COUNTRY_DESTINATIONS;
 
   try {
-    // Load featured flights from Supabase
-    const { data, error } = await supabase
-      .from('flights')
-      .select('*')
-      .eq('featured', true)
-      .limit(6);
-    
-    if (!error && data && data.length > 0) {
-      const used = data.map(d => {
-        const match = COUNTRY_DESTINATIONS.find(c => c.to_code === d.to_code || c.toCode === d.toCode);
-        return { ...match, ...d };
-      }).filter(Boolean);
-      if (used.length >= 1) items = used;
-    }
-    renderDestGrid(items, grid);
+    // Use real-time featured flights if available
+    const q = query(collection(db, 'flights'), where('featured', '==', true), limit(6));
+    // subscribe
+    onSnapshot(q, snap => {
+      if (!snap.empty) {
+        const used = snap.docs.map(d => {
+          const data = d.data();
+          const match = COUNTRY_DESTINATIONS.find(c => c.toCode === data.toCode);
+          return { ...match, ...data };
+        }).filter(Boolean);
+        if (used.length >= 1) items = used;
+      }
+      renderDestGrid(items, grid);
+    });
     return;
   } catch(e) { /* use defaults */ }
 
   grid.innerHTML = items.map((dest) => `
-    <div class="dest-card" onclick="goTo('${dest.toCode || dest.to_code}','${dest.toCity || dest.to_city}','${dest.country}')">
+    <div class="dest-card" onclick="goTo('${dest.toCode}','${dest.toCity}','${dest.country}')">
       <div class="dest-img" style="background-image:url('${dest.img}')"></div>
       <div class="dest-overlay"></div>
       <div class="dest-info">
