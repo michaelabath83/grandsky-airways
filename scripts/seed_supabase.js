@@ -60,16 +60,13 @@ async function seedData() {
     
     // Map Firestore field names to Postgres snake_case
     const flightsMapped = flights.map(f => ({
-      id: f.id,
       airline: f.airline || f.airline_code || '',
       from_code: f.fromCode || f.from_code || f.from || '',
       to_code: f.toCode || f.to_code || f.to || '',
       from_city: f.fromCity || f.from_city || '',
       to_city: f.toCity || f.to_city || '',
       price: f.price || 0,
-      featured: f.featured || false,
-      flight_json: typeof f.flight_json === 'string' ? f.flight_json : JSON.stringify(f),
-      created_at: new Date().toISOString()
+      featured: f.featured || false
     }));
 
     const { error: flightsError } = await supabase

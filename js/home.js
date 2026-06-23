@@ -387,47 +387,50 @@ const COUNTRY_DESTINATIONS = [
 
 async function loadDestinations() {
   const grid = document.getElementById('destGrid');
-  let items = COUNTRY_DESTINATIONS;
-
-  try {
-    // Load featured flights from Supabase
-    const { data, error } = await supabase
-      .from('flights')
-      .select('*')
-      .eq('featured', true)
-      .limit(6);
+  let items = [...COUNTRY_DESTINATIONS];
+  
+  // Render defaults immediately (no waiting)
+  renderDestGrid(items, grid);
+  
+  // Fetch asset URLs and featured flights in parallel (non-blocking)
+  Promise.all([
+    fetch('/supabase_asset_urls.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    supabase.from('flights').select('*').eq('featured', true).limit(6).catch(() => ({ data: null }))
+  ]).then(([assetMap, flightsRes]) => {
+    let updated = [...items];
     
-    if (!error && data && data.length > 0) {
-      const used = data.map(d => {
-        const match = COUNTRY_DESTINATIONS.find(c => c.to_code === d.to_code || c.toCode === d.toCode);
-        return { ...match, ...d };
-      }).filter(Boolean);
-      if (used.length >= 1) items = used;
+    // Update with asset URLs if available
+    if (assetMap) {
+      updated = updated.map(d => {
+        const filename = d.img ? d.img.split('/').pop() : null;
+        if (filename) {
+          const candidate = Object.keys(assetMap).find(k => k.endsWith(filename));
+          if (candidate) d.img = assetMap[candidate];
+        }
+        return d;
+      });
     }
-    renderDestGrid(items, grid);
-    return;
-  } catch(e) { /* use defaults */ }
-
-  grid.innerHTML = items.map((dest) => `
-    <div class="dest-card" onclick="goTo('${dest.toCode || dest.to_code}','${dest.toCity || dest.to_city}','${dest.country}')">
-      <div class="dest-img" style="background-image:url('${dest.img}')"></div>
-      <div class="dest-overlay"></div>
-      <div class="dest-info">
-        <span class="dest-flag">${dest.flag}</span>
-        <div class="dest-country-name">${dest.country}</div>
-        <div class="dest-region">${dest.region}</div>
-        <div class="dest-price-tag">
-          <span class="from">from</span> $${dest.price}
-        </div>
-      </div>
-    </div>`
-  ).join('');
+    
+    // Update with featured flights from Supabase if available
+    if (flightsRes && !flightsRes.error && flightsRes.data && flightsRes.data.length > 0) {
+      const used = flightsRes.data.map(d => {
+        const match = COUNTRY_DESTINATIONS.find(c => c.to_code === d.to_code || c.toCode === d.toCode);
+        return { ...match, ...d, toCode: d.to_code, toCity: d.to_city };
+      }).filter(Boolean);
+      if (used.length >= 1) updated = used;
+    }
+    
+    // Only re-render if there are changes
+    if (JSON.stringify(updated) !== JSON.stringify(items)) {
+      renderDestGrid(updated, grid);
+    }
+  });
 }
 
 function renderDestGrid(items, grid) {
   grid.innerHTML = items.map((dest) => `
     <div class="dest-card" onclick="goTo('${dest.toCode}','${dest.toCity}','${dest.country}')">
-      <div class="dest-img" style="background-image:url('${dest.img || 'css/assets/default.jpg'}')"></div>
+      <div class="dest-img lazy-bg" data-bg="${dest.img || 'css/assets/default.jpg'}"></div>
       <div class="dest-overlay"></div>
       <div class="dest-info">
         <span class="dest-flag">${dest.flag || ''}</span>
@@ -439,6 +442,26 @@ function renderDestGrid(items, grid) {
       </div>
     </div>`
   ).join('');
+  // kick off lazy loader for newly rendered cards
+  if (typeof initDestLazyLoader === 'function') initDestLazyLoader();
+}
+
+// Lazy-load background images for destination cards
+function initDestLazyLoader() {
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const url = el.dataset.bg;
+      if (url) {
+        el.style.backgroundImage = `url('${url}')`;
+        el.classList.add('loaded');
+      }
+      obs.unobserve(el);
+    });
+  }, { rootMargin: '200px 0px', threshold: 0.01 });
+
+  document.querySelectorAll('.dest-img.lazy-bg').forEach(e => observer.observe(e));
 }
 
 window.goTo = function(code, city, country) {

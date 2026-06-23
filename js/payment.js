@@ -129,11 +129,28 @@ function populateOrderSummary() {
 
     if (fs) {
       const airlineText = flight && flight.airline ? (flight.airline.name || flight.airline) : '';
-      fs.innerHTML = `\n        <div class="fs-row route"><strong>${flight?.from || ''} (${flight?.fromCity || ''}) → ${flight?.to || ''} (${flight?.toCity || ''})</strong></div>\n        <div class="fs-row meta">${airlineText} • ${flight?.cabinClass || ''} • ${flight?.departDate || ''}</div>\n        <div class="fs-row times">${flight?.dep || ''} → ${flight?.arr || ''} • ${flight?.dur || ''}</div>\n        <div class="fs-row pax">Passengers: ${flight?.pax || 1}</div>\n      `;
+      const airlineCode = flight && flight.airline ? (flight.airline.code || (typeof flight.airline === 'string' ? flight.airline.slice(0,2).toUpperCase() : 'GS')) : 'GS';
+      fs.innerHTML = `
+        <div class="flight-summary-card">
+          <div class="fs-airline">${airlineText} ${flight?.flightNum ? '• ' + flight.flightNum : ''}</div>
+          <div class="fs-route"><strong>${flight?.from || ''} (${flight?.fromCity || ''}) → ${flight?.to || ''} (${flight?.toCity || ''})</strong></div>
+          <div class="fs-times">${flight?.dep || ''} → ${flight?.arr || ''} • ${flight?.dur || ''}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div class="fs-class">${(flight?.cabinClass||'Economy').toUpperCase()}</div>
+            <div style="text-align:right;font-size:14px;color:var(--muted)">Passengers: ${flight?.pax || 1}</div>
+          </div>
+        </div>
+      `;
     }
 
     if (pb) {
-      pb.innerHTML = `\n        <div class="pb-row"><span>Base fare</span><span>${formatUSD(baseFare)}</span></div>\n        <div class="pb-row"><span>Taxes & fees</span><span>${formatUSD(tax)}</span></div>\n        <div class="pb-row total"><strong>Total</strong><strong>${formatUSD(grand)}</strong></div>\n      `;
+      pb.innerHTML = `
+        <div class="price-breakdown-card">
+          <div class="pb-row"><span>Base fare</span><span>${formatUSD(baseFare)}</span></div>
+          <div class="pb-row"><span>Taxes & fees</span><span>${formatUSD(tax)}</span></div>
+          <div class="pb-row total"><strong>Total</strong><strong>${formatUSD(grand)}</strong></div>
+        </div>
+      `;
       total = grand; taxes = tax;
     }
   } catch (e) { console.error('populateOrderSummary failed', e); }
@@ -269,7 +286,7 @@ async function callServer(path, body) {
   let base = '';
   try {
     if (window.SERVER_API_BASE) base = window.SERVER_API_BASE;
-    else if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') base = 'https://grandskyairways.com';
+    else if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') base = 'https://www.grandskyairways.com';
   } catch (e) { base = ''; }
   const url = base + path;
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });

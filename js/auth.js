@@ -8,8 +8,6 @@ const redirect = new URLSearchParams(location.search).get('redirect') || null;
 
 // Redirect helper
 function _adminHref() {
-  // If the current page is inside the /pages/ folder, return a same-folder link.
-  // Otherwise return the path from project root.
   try {
     const p = location.pathname || '';
     if (p.includes('/pages/')) return 'admin.html';
@@ -17,7 +15,16 @@ function _adminHref() {
   } catch(e) { return 'pages/admin.html'; }
 }
 
-// Supabase auth state handler
+// Toast helper
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = type ? `show ${type}` : 'show';
+  setTimeout(() => { toast.className = toast.className.replace('show','').trim(); }, 4000);
+}
+
+// Auth state listener
 supabase.auth.onAuthStateChange((event, session) => {
   const user = session?.user || null;
   if (user) {
@@ -31,7 +38,7 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-// ── Tab switching ──
+// Tab switching
 document.querySelectorAll('.auth-tab').forEach(tab => {
   tab.addEventListener('click', function() {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -42,7 +49,7 @@ document.querySelectorAll('.auth-tab').forEach(tab => {
   });
 });
 
-// ── Eye toggle ──
+// Eye toggle
 document.querySelectorAll('.eye-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const input = document.getElementById(btn.dataset.target);
@@ -51,7 +58,7 @@ document.querySelectorAll('.eye-btn').forEach(btn => {
   });
 });
 
-// ── Password strength ──
+// Password strength
 document.getElementById('regPass')?.addEventListener('input', function() {
   const val = this.value;
   const fill  = document.getElementById('strengthFill');
@@ -72,10 +79,10 @@ document.getElementById('regPass')?.addEventListener('input', function() {
   label.style.color = colors[score - 1] || 'var(--muted)';
 });
 
-// ── Forgot password ──
-document.getElementById('forgotLink').addEventListener('click', async (e) => {
+// Forgot password
+document.getElementById('forgotLink')?.addEventListener('click', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
+  const email = document.getElementById('loginEmail')?.value.trim() || '';
   if (!email) { showToast('Enter your email above first.', 'error'); return; }
   try {
     await supabase.auth.resetPasswordForEmail(email);
@@ -84,45 +91,58 @@ document.getElementById('forgotLink').addEventListener('click', async (e) => {
     showToast('Could not send reset email. Check the address.', 'error');
   }
 });
-
-// ── LOGIN ──
-document.getElementById('loginBtn').addEventListener('click', async () => {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
+// LOGIN
+let isLoggingIn = false;
+document.getElementById('loginBtn')?.addEventListener('click', async () => {
+  if (isLoggingIn) return; // prevent double-click/spam
+  const email = document.getElementById('loginEmail')?.value.trim() || '';
+  const pass  = document.getElementById('loginPass')?.value || '';
 
   if (!email || !pass) { showToast('Please enter your email and password.', 'error'); return; }
 
-  setLoading('loginBtn', true);
+  const btn = document.getElementById('loginBtn');
+  isLoggingIn = true;
+  btn.disabled = true;
+  btn.classList.add('loading');
+
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    if (error) throw error;
-    const user = data?.user || null;
-    if (user && ADMIN_EMAILS.includes(user.email)) {
-      window.location.href = _adminHref();
-    } else {
-      const dest = sessionStorage.getItem('postLoginRedirect') || '../index.html';
-      sessionStorage.removeItem('postLoginRedirect');
-      window.location.href = dest;
+    if (error) {
+      // log full error for debugging
+      console.error('Sign-in error:', error);
+      throw error;
     }
+    // onAuthStateChange will redirect
   } catch(err) {
-    setLoading('loginBtn', false);
-    showToast(err.message || 'Sign in failed. Please try again.', 'error');
+    const msg = err?.message || 'Sign in failed';
+    console.error('Sign-in failed:', err);
+    if (msg.toLowerCase().includes('invalid')) {
+      showToast('Invalid email or password.', 'error');
+    } else if (msg.toLowerCase().includes('too many')) {
+      showToast('Too many requests. Please wait a minute and try again.', 'error');
+    } else {
+      showToast(msg, 'error');
+    }
+  } finally {
+    isLoggingIn = false;
+    try { btn.disabled = false; btn.classList.remove('loading'); } catch(e){}
   }
 });
 
-// ── REGISTER ──
-document.getElementById('registerBtn').addEventListener('click', async () => {
-  const firstName      = document.getElementById('regFirstName').value.trim();
-  const lastName       = document.getElementById('regLastName').value.trim();
-  const email          = document.getElementById('regEmail').value.trim();
-  const dob            = document.getElementById('regDob').value;
-  const nationality    = document.getElementById('regNationality').value;
-  const passport       = document.getElementById('regPassport').value.trim();
-  const passportExpiry = document.getElementById('regPassportExpiry').value;
-  const phone          = document.getElementById('regPhone').value.trim();
-  const pass           = document.getElementById('regPass').value;
-  const passConfirm    = document.getElementById('regPassConfirm').value;
-  const terms          = document.getElementById('regTerms').checked;
+// REGISTER
+let isRegistering = false;
+document.getElementById('registerBtn')?.addEventListener('click', async () => {
+  const firstName      = document.getElementById('regFirstName')?.value.trim() || '';
+  const lastName       = document.getElementById('regLastName')?.value.trim() || '';
+  const email          = document.getElementById('regEmail')?.value.trim() || '';
+  const dob            = document.getElementById('regDob')?.value || '';
+  const nationality    = document.getElementById('regNationality')?.value || '';
+  const passport       = document.getElementById('regPassport')?.value.trim() || '';
+  const passportExpiry = document.getElementById('regPassportExpiry')?.value || '';
+  const phone          = document.getElementById('regPhone')?.value.trim() || '';
+  const pass           = document.getElementById('regPass')?.value || '';
+  const passConfirm    = document.getElementById('regPassConfirm')?.value || '';
+  const terms          = document.getElementById('regTerms')?.checked || false;
 
   // Validation
   if (!firstName || !lastName)           { showToast('Please enter your full name.', 'error'); return; }
@@ -134,70 +154,66 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
   if (pass !== passConfirm)              { showToast('Passwords do not match.', 'error'); return; }
   if (!terms)                            { showToast('Please accept the Terms of Service.', 'error'); return; }
 
-  setLoading('registerBtn', true);
+  const btn = document.getElementById('registerBtn');
+  if (isRegistering) return;
+  isRegistering = true;
+  btn.disabled = true;
+  btn.classList.add('loading');
+
   try {
+    // Create auth user
     const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error) throw error;
+    if (error) {
+      console.error('Sign-up error:', error);
+      throw error;
+    }
+
     const user = data?.user;
-    // Create profile row in Supabase (ensure `profiles` table exists)
-    try {
-      await supabase.from('profiles').insert([{ 
-        id: user.id,
+    if (user) {
+      // Update profile with full details
+      const { error: profileError } = await supabase.from('profiles').update({
         first_name: firstName,
         last_name: lastName,
-        email,
         dob,
         nationality,
         passport,
         passport_expiry: passportExpiry,
         phone,
-        role: ADMIN_EMAILS.includes(email) ? 'admin' : 'user',
-        marketing: document.getElementById('regMarketing').checked,
-        created_at: new Date().toISOString()
-      }]);
-    } catch(profileErr) {
-      console.warn('Failed to create profile row:', profileErr);
+        marketing: document.getElementById('regMarketing')?.checked || false
+      }).eq('id', user.id);
+      if (profileError) console.warn('Warning: profile update failed:', profileError.message);
     }
-    showToast('Registration successful. Check your email for verification.', 'success');
-    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
-    return;
+
+    showToast('Account created! Check your email to confirm before signing in.', 'success');
+    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
   } catch(err) {
-    setLoading('registerBtn', false);
-    showToast(err.message || 'Registration failed. Please try again.', 'error');
+    console.error('Registration failed:', err);
+    const msg = err?.message || '';
+    if (msg.toLowerCase().includes('too many')) {
+      showToast('Too many requests. Please wait and try again.', 'error');
+    } else {
+      showToast(msg || 'Registration failed.', 'error');
+    }
+  } finally {
+    isRegistering = false;
+    try { btn.disabled = false; btn.classList.remove('loading'); } catch(e){}
   }
 });
 
-// ── GOOGLE ── (OAuth redirect handled by Supabase)
-document.getElementById('googleBtn').addEventListener('click', async () => {
+// GOOGLE signin
+document.getElementById('googleBtn')?.addEventListener('click', async () => {
   try {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/pages/login.html' } });
   } catch(err) {
-    showToast('Google sign-in failed. Please try again.', 'error');
+    showToast('Google sign-in failed.', 'error');
   }
 });
 
-// ── GOOGLE (register button) ──
+// GOOGLE register
 document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
   try {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/pages/login.html' } });
   } catch(err) {
-    showToast('Google sign-up failed. Please try again.', 'error');
+    showToast('Google sign-up failed.', 'error');
   }
 });
-
-// ── Helpers ──
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  btn.disabled = loading;
-  btn.classList.toggle('loading', loading);
-  btn.querySelector('span').textContent = loading
-    ? (btnId === 'loginBtn' ? 'Signing in' : 'Creating account')
-    : (btnId === 'loginBtn' ? 'Sign In' : 'Create Account');
-}
-
-function showToast(msg, type = '') {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = type ? `show ${type}` : 'show';
-  setTimeout(() => { toast.className = toast.className.replace('show','').trim(); }, 4000);
-}

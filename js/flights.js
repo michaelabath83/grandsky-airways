@@ -290,26 +290,31 @@ async function verifyAirlineLogos() {
 }
 
 // Select a flight
-window.selectFlight = function(id, price, airline, dep, arr, dur, stops) {
+window.selectFlight = async function(id, price, airline, dep, arr, dur, stops) {
   const sel = JSON.stringify({
     id, price, airline, dep, arr, dur, stops,
     from: searchFrom, fromCity, to: searchTo, toCity,
     departDate, pax, cabinClass, tripType
   });
-  // store in sessionStorage for normal navigation and localStorage as a fallback
-  // so selection survives OAuth redirect flows that may clear sessionStorage
+  // persist selection
   sessionStorage.setItem('selectedFlight', sel);
   try { localStorage.setItem('selectedFlight', sel); } catch(e) {}
-  // debug visibility
-  try { console.log('selectFlight saved', JSON.parse(sel)); } catch(e) {}
 
-  // Check auth
-  const user = auth.currentUser;
-  if (!user) {
+  // ensure user auth via Supabase
+  try {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user || null;
+    if (!user) {
+      sessionStorage.setItem('postLoginRedirect', 'payment.html');
+      window.location.href = 'login.html?redirect=payment.html';
+      return;
+    }
+    // user signed in — proceed to payment page
+    window.location.href = 'payment.html';
+  } catch (e) {
+    // fallback: redirect to login
     sessionStorage.setItem('postLoginRedirect', 'payment.html');
     window.location.href = 'login.html?redirect=payment.html';
-  } else {
-    window.location.href = 'payment.html';
   }
 };
 

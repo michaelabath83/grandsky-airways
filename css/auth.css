@@ -20,6 +20,16 @@ body { background: var(--surface2); min-height: 100vh; color: var(--white); }
   display: grid; grid-template-columns: 1fr 1fr;
   min-height: 100vh;
 }
+.auth-layout {
+  /* sit above any global overlays on this page and ensure interaction */
+  position: relative;
+  z-index: 10001;
+}
+
+/* Force inputs/buttons in the auth area to accept pointer events */
+.auth-layout, .auth-layout * {
+  pointer-events: auto !important;
+}
 
 /* ── LEFT VISUAL PANEL ── */
 .auth-visual {
@@ -65,6 +75,18 @@ body { background: var(--surface2); min-height: 100vh; color: var(--white); }
   background: var(--surface);
   overflow-y: auto;
 }
+.auth-panel {
+  /* ensure the interactive form sits above any accidental overlays */
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+.auth-card {
+  /* make the card explicitly interactive */
+  position: relative;
+  z-index: 11;
+  pointer-events: auto;
+}
 .auth-card { width: 100%; max-width: 460px; }
 
 /* Tabs */
@@ -80,6 +102,7 @@ body { background: var(--surface2); min-height: 100vh; color: var(--white); }
   color: var(--muted); border-radius: 10px;
   transition: all var(--transition);
 }
+.auth-tab { pointer-events: auto; }
 .auth-tab.active {
   background: var(--surface); color: var(--gold-bright);
   font-weight: 700; box-shadow: 0 2px 12px rgba(0,0,0,.08);

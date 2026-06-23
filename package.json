@@ -13,6 +13,7 @@
     "firebase-admin": "^10.3.0",
     "firebase-cli": "^1.2.0",
     "minimist": "^1.2.8",
-    "vercel": "^54.14.0"
+    "pg": "^8.22.0",
+    "vercel": "^54.15.1"
   }
 }
