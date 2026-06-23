@@ -1,3 +1,4 @@
+// API v2 - CORS-enabled booking endpoint
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
